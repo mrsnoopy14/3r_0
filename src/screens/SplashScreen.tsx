@@ -1,43 +1,42 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, SafeAreaView } from 'react-native';
+﻿import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { KarmaCoin } from '../components/shared/KarmaCoin';
 import { ArrowRight, Box, Calendar, CheckSquare, Leaf, Wind, Trees } from 'lucide-react-native';
-
-const { width, height } = Dimensions.get('window');
+import { SCREEN_WIDTH as width, SCREEN_HEIGHT as height } from '../utils/layout';
 
 const SLIDES = [
   {
     id: 'intro',
     bg: ['#064e3b', '#0f766e'],
-    accent: '#16a34a',
-    title: 'Welcome to\nKarma Credits',
-    subtitle: 'Turn your everyday waste into rewards. Recycle, earn credits, and make the planet greener.',
+    accent: '#4ade80',
+    title: 'Welcome to\nKarmaCoins XP',
+    subtitle: 'Turn your plastic, paper, metal & more into rewards. Recycle, earn coins, and make the planet greener.',
     buttonText: 'Next',
   },
   {
     id: 'earn',
-    bg: ['#1c1917', '#292524'],
-    accent: '#f59e0b',
-    title: 'Earn Credits\nBy Recycling',
-    subtitle: 'Schedule waste pickups or upload photos of your waste. Our AI identifies items and credits your account instantly.',
+    bg: ['#065f46', '#047857'],
+    accent: '#fbbf24',
+    title: 'Earn credits\nby recycling',
+    subtitle: 'Schedule pickups for plastic, paper, metal, e-waste & more. Our agent identifies items and credits your account instantly.',
     buttonText: 'Next',
   },
   {
     id: 'impact',
-    bg: ['#0f172a', '#1e293b'],
-    accent: '#0ea5e9',
-    title: 'Real Environmental\nImpact',
+    bg: ['#0f766e', '#0d9488'],
+    accent: '#38bdf8',
+    title: 'Real environmental\nimpact',
     subtitle: 'Every pickup contributes to a greener planet. Track your CO₂ savings, waste recycled, and global impact.',
     buttonText: 'Next',
   },
   {
     id: 'redeem',
-    bg: ['#2e1065', '#4c1d95'],
-    accent: '#8b5cf6',
-    title: 'Redeem Amazing\nEco Rewards',
-    subtitle: 'Use your Karma Credits to redeem eco-friendly products, plant trees, and get exclusive sustainability rewards.',
-    buttonText: 'Get Started',
+    bg: ['#166534', '#15803d'],
+    accent: '#fcd34d',
+    title: 'Redeem amazing\neco rewards',
+    subtitle: 'Use your Karma Coins to redeem eco-friendly products, plant trees, and get exclusive sustainability rewards.',
+    buttonText: 'Get started',
   }
 ];
 
@@ -76,20 +75,17 @@ export function SplashScreen({ navigation }: any) {
         <View style={{ paddingTop: 40, paddingHorizontal: 10, width: '100%' }}>
           <View style={styles.timelineItem}>
             <View style={[styles.timelineIcon, { backgroundColor: '#3f3f46' }]}><Box size={16} color="#d4d4d8" /></View>
-            <View style={[styles.timelineBox, { backgroundColor: 'rgba(255,255,255,0.05)' }]}><Text style={styles.timelineText}>Separate your waste</Text></View>
-            <View style={styles.timelineReward}><KarmaCoin size={16} /><Text style={styles.timelineRewardText}>+20</Text></View>
+            <View style={[styles.timelineBox, { backgroundColor: 'rgba(255,255,255,0.05)' }]}><Text style={styles.timelineText}>Separate your items</Text></View>
             <View style={[styles.timelineLine, { height: 40, top: 40 }]} />
           </View>
           <View style={styles.timelineItem}>
             <View style={[styles.timelineIcon, { backgroundColor: '#3f3f46' }]}><Calendar size={16} color="#fbbf24" /></View>
             <View style={[styles.timelineBox, { backgroundColor: 'rgba(255,255,255,0.05)' }]}><Text style={styles.timelineText}>Schedule a pickup</Text></View>
-            <View style={styles.timelineReward}><KarmaCoin size={16} /><Text style={styles.timelineRewardText}>+40</Text></View>
             <View style={[styles.timelineLine, { height: 40, top: 40 }]} />
           </View>
           <View style={styles.timelineItem}>
             <View style={[styles.timelineIcon, { backgroundColor: '#22c55e' }]}><CheckSquare size={16} color="white" /></View>
-            <View style={[styles.timelineBox, { backgroundColor: 'rgba(255,255,255,0.05)' }]}><Text style={styles.timelineText}>Earn Karma Credits</Text></View>
-            <View style={styles.timelineReward}><KarmaCoin size={16} /><Text style={styles.timelineRewardText}>+60</Text></View>
+            <View style={[styles.timelineBox, { backgroundColor: 'rgba(255,255,255,0.05)' }]}><Text style={styles.timelineText}>Earn Karma Coins</Text></View>
           </View>
           <View style={{ backgroundColor: 'rgba(245,158,11,0.1)', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 16, marginTop: 24, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)' }}>
             <Text style={{ color: '#fbbf24', fontSize: 16, marginRight: 8 }}>⭐</Text>
@@ -103,15 +99,15 @@ export function SplashScreen({ navigation }: any) {
         <View style={{ paddingTop: 40, width: '100%', gap: 16 }}>
           <View style={styles.impactCard}>
             <View style={[styles.impactIconBg, { backgroundColor: 'rgba(16,185,129,0.15)' }]}><LexIcon color="#10b981" /></View>
-            <View><Text style={styles.impactTitle}>2.8B kg</Text><Text style={styles.impactDesc}>Waste recycled globally</Text></View>
+            <View><Text style={styles.impactTitle}>2.8 billion kg</Text><Text style={styles.impactDesc}>Waste recycled globally</Text></View>
           </View>
           <View style={styles.impactCard}>
             <View style={[styles.impactIconBg, { backgroundColor: 'rgba(14,165,233,0.15)' }]}><Wind color="#0ea5e9" size={24} /></View>
-            <View><Text style={styles.impactTitle}>1.2B kg</Text><Text style={styles.impactDesc}>CO₂ emissions prevented</Text></View>
+            <View><Text style={styles.impactTitle}>1.2 billion kg</Text><Text style={styles.impactDesc}>CO₂ emissions prevented</Text></View>
           </View>
           <View style={styles.impactCard}>
             <View style={[styles.impactIconBg, { backgroundColor: 'rgba(34,197,94,0.15)' }]}><Trees color="#22c55e" size={24} /></View>
-            <View><Text style={styles.impactTitle}>4M+</Text><Text style={styles.impactDesc}>Trees equivalent saved</Text></View>
+            <View><Text style={styles.impactTitle}>4 million+</Text><Text style={styles.impactDesc}>Trees equivalent saved</Text></View>
           </View>
           <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 10 }}>🌐 Global 3R Zero Waste Network • 2026</Text>
         </View>
@@ -122,6 +118,11 @@ export function SplashScreen({ navigation }: any) {
         <View style={{ paddingTop: 40, width: '100%' }}>
           <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
              <View style={[styles.rewardCard, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+               <Box size={32} color="#60a5fa" style={{ marginBottom: 12 }} />
+               <Text style={styles.rewardTitle}>Eco Tote Bag</Text>
+               <View style={styles.timelineReward}><KarmaCoin size={14} /><Text style={styles.timelineRewardText}>150</Text></View>
+             </View>
+             <View style={[styles.rewardCard, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
                <Leaf size={32} color="#86efac" style={{ marginBottom: 12 }} />
                <Text style={styles.rewardTitle}>Bamboo Bottle</Text>
                <View style={styles.timelineReward}><KarmaCoin size={14} /><Text style={styles.timelineRewardText}>200</Text></View>
@@ -130,11 +131,6 @@ export function SplashScreen({ navigation }: any) {
                <Trees size={32} color="#a3e635" style={{ marginBottom: 12 }} />
                <Text style={styles.rewardTitle}>Plant a Tree</Text>
                <View style={styles.timelineReward}><KarmaCoin size={14} /><Text style={styles.timelineRewardText}>500</Text></View>
-             </View>
-             <View style={[styles.rewardCard, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
-               <Box size={32} color="#60a5fa" style={{ marginBottom: 12 }} />
-               <Text style={styles.rewardTitle}>Eco Tote Bag</Text>
-               <View style={styles.timelineReward}><KarmaCoin size={14} /><Text style={styles.timelineRewardText}>150</Text></View>
              </View>
           </View>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', paddingVertical: 14, borderRadius: 16, marginTop: 20, alignItems: 'center' }}>
@@ -154,9 +150,11 @@ export function SplashScreen({ navigation }: any) {
       {/* Dynamic Header */}
       <View style={styles.header}>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={() => navigation.replace('Login')}>
-          <Text style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: 14 }}>Skip</Text>
-        </TouchableOpacity>
+        {currentIndex < SLIDES.length - 1 && (
+          <TouchableOpacity onPress={() => navigation.replace('Login')}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: 14 }}>Skip</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView

@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Real Backend URL
-const BASE_URL = 'https://karmacoin-backend-1.onrender.com';
+const BASE_URL = 'https://karmacoin-backend-8.onrender.com';
 
 const api = axios.create({
   baseURL: BASE_URL,

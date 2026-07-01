@@ -37,12 +37,35 @@ export const profileService = {
   // Update Address
   updateAddress: async (data: { fullAddress: string; longitude?: number; latitude?: number }) => {
     try {
-      const response = await api.patch('/api/v1/user/address', data);
+      const response = await api.patch('/api/v1/users/address', data);
       return response.data;
     } catch (error) {
       console.error('Update Address Error:', error);
       throw error;
     }
+  },
+
+  // Claim quiz reward coins
+  claimQuizReward: async (coins: number) => {
+    try {
+      const response = await api.post('/api/v1/quiz/claim-reward', { coins });
+      return response.data;
+    } catch (error) {
+      console.error('Claim Quiz Reward Error:', error);
+      throw error;
+    }
+  },
+
+  // Send OTP for profile change verification
+  sendProfileOtp: async (emailOrPhone: string) => {
+    const response = await api.post('/api/v1/auth/send-otp', { email: emailOrPhone });
+    return response.data;
+  },
+
+  // Verify profile change OTP
+  verifyProfileOtp: async (emailOrPhone: string, otp: string) => {
+    const response = await api.post('/api/v1/auth/verify-otp', { email: emailOrPhone, otp });
+    return response.data;
   },
 
   // Get Transaction History

@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Share, StatusBar } from 'react-native';
-import { ChevronLeft, Share2, Copy, Network, ArrowDownRight, Users, Sparkles } from 'lucide-react-native';
+﻿import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeft, Share2, Copy, Network, ArrowDownRight, Users } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { KarmaCoin } from '../components/shared/KarmaCoin';
 
@@ -9,7 +10,7 @@ export function ReferralScreen({ navigation }: any) {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: 'Join me on Karma Credits and let us recycle together! Use my invite code KARMA-X9V2 to get 50 bonus credits. https://karmacredits.app',
+        message: 'Join me on KarmaCoins XP and let us recycle together! Use my invite code KARMA-X9V2 to get 50 bonus coins. https://karmacoinsxp.app',
       });
     } catch (error) {
       console.log(error);
@@ -37,7 +38,7 @@ export function ReferralScreen({ navigation }: any) {
             <View style={styles.heroContent}>
               <Network size={48} color="white" style={styles.heroIcon} />
               <Text style={styles.heroTitle}>Invite & Earn Passively</Text>
-              <Text style={styles.heroSub}>Get 10% of the Karma Credits every time your friends recycle. Forever.</Text>
+              <Text style={styles.heroSub}>Get 10% of the Karma Coins every time your friends recycle. Forever.</Text>
 
               {/* Code Box */}
               <View style={styles.codeBox}>
@@ -144,8 +145,8 @@ export function ReferralScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   rootContainer: { flex: 1, backgroundColor: '#f8fafc' },
-  topNotchFiller: { position: 'absolute', top: 0, left: 0, right: 0, height: 200, backgroundColor: '#7e22ce' },
-  container: { flex: 1 },
+  topNotchFiller: { position: 'absolute', top: 0, left: 0, right: 0, height: 60, backgroundColor: '#7e22ce' },
+  container: { flex: 1, maxWidth: 900, width: '100%', alignSelf: 'center' },
   heroSection: { borderBottomLeftRadius: 40, borderBottomRightRadius: 40, paddingTop: 10, paddingBottom: 40 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
   backBtn: { padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12 },

@@ -1,5 +1,6 @@
 import api from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerForPushNotifications, sendTokenToBackend, removeTokenFromBackend } from '../utils/notifications';
 
 export const authService = {
   // Login
@@ -10,9 +11,19 @@ export const authService = {
         password: passwordOrOtp 
       });
       
-      const token = response.data.data.token;
-      await AsyncStorage.setItem('userToken', token);
+      // Safely extract token whether it's nested inside 'data' or directly on the response
+      const token = response.data?.data?.token || response.data?.token;
       
+      if (!token) {
+        throw new Error('Authentication failed: No token received from server');
+      }
+
+      await AsyncStorage.setItem('userToken', token);
+
+      registerForPushNotifications().then(fcmToken => {
+        if (fcmToken) sendTokenToBackend(fcmToken);
+      }).catch(() => {});
+
       return response.data;
     } catch (error: any) {
       console.error('Login Error:', error?.response?.data || error);
@@ -55,8 +66,42 @@ export const authService = {
     }
   },
   
+  // Google Sign-In — send idToken to backend, receive our JWT
+  googleLogin: async (idToken: string) => {
+    try {
+      const response = await api.post('/api/v1/auth/google', { idToken });
+      const token = response.data?.data?.token || response.data?.token;
+      if (!token) throw new Error('No token received');
+      await AsyncStorage.setItem('userToken', token);
+
+      registerForPushNotifications().then(fcmToken => {
+        if (fcmToken) sendTokenToBackend(fcmToken);
+      }).catch(() => {});
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Google Login Error:', error?.response?.data || error);
+      throw error;
+    }
+  },
+
+  // Send OTP for signup verification
+  sendSignupOtp: async (email: string) => {
+    const response = await api.post('/api/v1/auth/send-otp', { email });
+    return response.data;
+  },
+
+  // Verify signup OTP
+  verifySignupOtp: async (email: string, otp: string) => {
+    const response = await api.post('/api/v1/auth/verify-otp', { email, otp });
+    return response.data;
+  },
+
   // Logout
   logout: async () => {
+    try {
+      await removeTokenFromBackend();
+    } catch (_) {}
     try {
       await api.get('/api/v1/auth/logout');
     } catch (error) {

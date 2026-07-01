@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "KarmaCredits-RN",
+    "name": "KarmaCoins XP",
     "slug": "KarmaCredits-RN",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,10 +13,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.karmacredits.app"
     },
     "android": {
       "package": "com.karmacredits.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,6 +28,27 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1078804135433-uflagcil41uhmlgd3tf1g80snh0kj3b2"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#15803d"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d1a85489-5abc-4474-8cb6-97fc0827bd58"
+      }
+    },
+    "owner": "cinsin"
   }
 }

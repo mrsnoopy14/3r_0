@@ -17,7 +17,7 @@ export function KnowledgeHubScreen({ navigation }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color="#0f172a" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Knowledge Hub</Text>
+        <Text style={styles.headerTitle}>Knowledge hub</Text>
         <View style={styles.placeholderBox} />
       </View>
 
@@ -39,7 +39,7 @@ export function KnowledgeHubScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Latest Articles</Text>
+        <Text style={styles.sectionTitle}>Latest articles</Text>
 
         {/* List of Articles */}
         <View style={styles.listContainer}>

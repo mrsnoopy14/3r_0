@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline, UrlTile, PROVIDER_DEFAULT } from 'react-native-maps';
+import { LiveMap } from '../components/shared/LiveMap';
 import {
-  ArrowLeft, MoreHorizontal, MapPin, Package,
-  Weight, Coins, Phone, Star, Navigation
+  ArrowLeft, MoreHorizontal, MapPin,
+  Phone, Star, Navigation, FileText
 } from 'lucide-react-native';
+import { bookingService } from '../services/booking';
 
-const mockBooking = {
+const FALLBACK = {
   id: 'KC12345',
-  status: 'IN PROGRESS',
+  status: 'COMPLETED',
   address: 'Green Park Society, Sector 16, Noida, UP 201301',
   wasteType: 'Mixed Waste',
   estWeight: '2.5 kg',
@@ -23,10 +24,47 @@ const mockBooking = {
   userLocation: { latitude: 28.5355, longitude: 77.3910 },
 };
 
-export function BookingDetailsScreen({ navigation }: any) {
+export function BookingDetailsScreen({ navigation, route }: any) {
+  const passed = route?.params?.booking;
+  const bookingId = passed?._id || passed?.id || '';
+  const [agentData, setAgentData] = useState<any>(passed?.agent || null);
+
+  useEffect(() => {
+    if (!bookingId) return;
+    bookingService.getBookingById(bookingId)
+      .then((full: any) => {
+        if (full?.agent) setAgentData(full.agent);
+      })
+      .catch(() => {});
+  }, [bookingId]);
+
+  const rawId = bookingId || FALLBACK.id;
+  const shortId = rawId.length > 10 ? `#${rawId.substring(0, 8).toUpperCase()}` : rawId;
+
+  const mainCat = passed?.categories?.[0]?.subCategory || passed?.categories?.[0]?.category || FALLBACK.wasteType;
+  const wasteType = passed?.categories?.length > 1 ? `${mainCat} +${passed.categories.length - 1}` : (mainCat || FALLBACK.wasteType);
+
+  const addressText = typeof passed?.address === 'object'
+    ? (passed.address?.fullAddress || FALLBACK.address)
+    : (passed?.address || FALLBACK.address);
+
+  const booking = {
+    id: shortId,
+    status: passed?.status || FALLBACK.status,
+    address: addressText,
+    wasteType,
+    estCoins: passed?.totalKarmaCoins || FALLBACK.estCoins,
+    agent: agentData || FALLBACK.agent,
+    specialInstruction: passed?.specialInstruction || null,
+    agentLocation: agentData?.location || passed?.agent?.location || FALLBACK.agentLocation,
+    userLocation: passed?.address?.location?.coordinates
+      ? { latitude: passed.address.location.coordinates[1], longitude: passed.address.location.coordinates[0] }
+      : FALLBACK.userLocation,
+  };
+
   const region = {
-    latitude: (mockBooking.agentLocation.latitude + mockBooking.userLocation.latitude) / 2,
-    longitude: (mockBooking.agentLocation.longitude + mockBooking.userLocation.longitude) / 2,
+    latitude: (booking.agentLocation.latitude + booking.userLocation.latitude) / 2,
+    longitude: (booking.agentLocation.longitude + booking.userLocation.longitude) / 2,
     latitudeDelta: 0.04,
     longitudeDelta: 0.04,
   };
@@ -47,17 +85,17 @@ export function BookingDetailsScreen({ navigation }: any) {
         </View>
       </SafeAreaView>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Booking ID */}
         <View style={styles.card}>
           <View style={styles.bookingTopRow}>
             <View>
               <Text style={styles.bookingIdLabel}>Booking ID</Text>
-              <Text style={styles.bookingId}>{mockBooking.id}</Text>
+              <Text style={styles.bookingId}>{booking.id}</Text>
             </View>
             <View style={styles.statusBadge}>
               <View style={styles.statusDot} />
-              <Text style={styles.statusText}>{mockBooking.status}</Text>
+              <Text style={styles.statusText}>{booking.status}</Text>
             </View>
           </View>
 
@@ -68,7 +106,7 @@ export function BookingDetailsScreen({ navigation }: any) {
             </View>
             <View style={styles.detailText}>
               <Text style={styles.detailLabel}>Pickup Address</Text>
-              <Text style={styles.detailValue}>{mockBooking.address}</Text>
+              <Text style={styles.detailValue}>{booking.address}</Text>
             </View>
           </View>
 
@@ -78,103 +116,105 @@ export function BookingDetailsScreen({ navigation }: any) {
           <View style={styles.detailsGrid}>
             <View style={styles.gridItem}>
               <Text style={styles.gridLabel}>Waste Type</Text>
-              <Text style={styles.gridValue}>{mockBooking.wasteType}</Text>
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.gridLabel}>Est. Weight</Text>
-              <Text style={styles.gridValue}>{mockBooking.estWeight}</Text>
+              <Text style={styles.gridValue}>{booking.wasteType}</Text>
             </View>
             <View style={styles.gridItem}>
               <Text style={styles.gridLabel}>Est. Coins</Text>
               <View style={styles.coinsRow}>
-                <Text style={styles.gridValue}>{mockBooking.estCoins} </Text>
+                <Text style={styles.gridValue}>{booking.estCoins} </Text>
                 <Text style={styles.coinEmoji}>🪙</Text>
               </View>
             </View>
           </View>
+
+          {/* Special Instructions */}
+          {booking.specialInstruction ? (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <View style={[styles.detailIconBg, { backgroundColor: '#fefce8' }]}>
+                  <FileText size={16} color="#ca8a04" />
+                </View>
+                <View style={styles.detailText}>
+                  <Text style={styles.detailLabel}>Special instructions</Text>
+                  <Text style={styles.detailValue}>{booking.specialInstruction}</Text>
+                </View>
+              </View>
+            </>
+          ) : null}
         </View>
 
         {/* Agent Details */}
         <Text style={styles.sectionTitle}>Agent Details</Text>
         <View style={styles.card}>
-          <View style={styles.agentRow}>
-            <View style={styles.agentAvatar}>
-              <Text style={styles.agentInitials}>{mockBooking.agent.initials}</Text>
-            </View>
-            <View style={styles.agentInfo}>
-              <Text style={styles.agentName}>{mockBooking.agent.name}</Text>
-              <View style={styles.ratingRow}>
-                <Star size={13} color="#f59e0b" fill="#f59e0b" />
-                <Text style={styles.agentRating}>{mockBooking.agent.rating}</Text>
+          {booking.agent ? (
+            <View style={styles.agentRow}>
+              <View style={styles.agentAvatar}>
+                <Text style={styles.agentInitials}>
+                  {booking.agent.name
+                    ? booking.agent.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
+                    : 'AP'}
+                </Text>
               </View>
+              <View style={styles.agentInfo}>
+                <Text style={styles.agentName}>{booking.agent.name || 'Agent Partner'}</Text>
+                <View style={styles.ratingRow}>
+                  <Star size={13} color="#f59e0b" fill="#f59e0b" />
+                  <Text style={styles.agentRating}>
+                    {booking.agent.rating != null ? booking.agent.rating : (booking.agent.averageRating != null ? booking.agent.averageRating : 'NA')}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.callBtn}
+                onPress={() => booking.agent?.phone && Linking.openURL(`tel:${booking.agent.phone}`)}
+              >
+                <Phone size={18} color="#15803d" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.callBtn}>
-              <Phone size={18} color="#15803d" />
-            </TouchableOpacity>
-          </View>
+          ) : (
+            <Text style={{ color: '#94a3b8', fontWeight: '600' }}>Agent not yet assigned</Text>
+          )}
         </View>
 
-        {/* Live Location */}
-        <View style={styles.liveSectionHeader}>
-          <Text style={styles.sectionTitle}>Live Location</Text>
-          <View style={styles.updatedBadge}>
-            <View style={styles.updatedDot} />
-            <Text style={styles.updatedText}>Updated just now</Text>
-          </View>
-        </View>
-
-        <View style={styles.mapCard}>
-          <MapView
-            style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            region={region}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-            showsCompass={false}
-            toolbarEnabled={false}
-          >
-            <UrlTile
-              urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maximumZ={19}
-              flipY={false}
-            />
-            <Marker coordinate={mockBooking.agentLocation} anchor={{ x: 0.5, y: 0.5 }}>
-              <View style={styles.agentMarker}>
-                <Text style={{ fontSize: 20 }}>🚛</Text>
+        {/* Live Location — only shown for active/in-progress bookings */}
+        {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && passed?.agent?.location ? (
+          <>
+            <View style={styles.liveSectionHeader}>
+              <Text style={styles.sectionTitle}>Live Location</Text>
+              <View style={styles.updatedBadge}>
+                <View style={styles.updatedDot} />
+                <Text style={styles.updatedText}>Updated just now</Text>
               </View>
-            </Marker>
-            <Marker coordinate={mockBooking.userLocation} anchor={{ x: 0.5, y: 1 }}>
-              <View style={styles.userMarker}>
-                <View style={styles.userMarkerInner} />
-              </View>
-            </Marker>
-            <Polyline
-              coordinates={[mockBooking.agentLocation, mockBooking.userLocation]}
-              strokeColor="#15803d"
-              strokeWidth={3}
-              lineDashPattern={[8, 4]}
-            />
-          </MapView>
-          <View style={styles.mapOverlay}>
-            <View style={styles.etaChip}>
-              <Navigation size={12} color="#15803d" />
-              <Text style={styles.etaText}>
-                {mockBooking.distanceKm} km away • {mockBooking.etaMins} mins from your location
-              </Text>
             </View>
-          </View>
-        </View>
+
+            <View style={styles.mapCard}>
+              <LiveMap
+                style={styles.map}
+                region={region}
+                agentLocation={booking.agentLocation}
+                userLocation={booking.userLocation}
+              />
+              <View style={styles.mapOverlay}>
+                <View style={styles.etaChip}>
+                  <Navigation size={12} color="#15803d" />
+                  <Text style={styles.etaText}>Agent location shown above</Text>
+                </View>
+              </View>
+            </View>
+          </>
+        ) : null}
 
         {/* CTA Button */}
         <View style={styles.ctaContainer}>
           <TouchableOpacity
             style={styles.trackBtn}
-            onPress={() => navigation.navigate('OrderTracking')}
+            onPress={() => navigation.navigate('OrderTracking', { booking: passed })}
           >
             <Navigation size={16} color="white" />
-            <Text style={styles.trackBtnText}>View Live Tracking</Text>
+            <Text style={styles.trackBtnText}>
+              {passed?.status === 'COMPLETED' ? 'View booking progress' : 'View live tracking'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -186,6 +226,7 @@ export function BookingDetailsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  scrollContent: { maxWidth: 680, width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: '#0f172a' },
@@ -236,10 +277,6 @@ const styles = StyleSheet.create({
   mapOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 16, paddingVertical: 10 },
   etaChip: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   etaText: { fontSize: 13, color: '#0f172a', fontWeight: '600' },
-
-  agentMarker: { backgroundColor: 'white', borderRadius: 16, padding: 3, elevation: 2 },
-  userMarker: { width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(59,130,246,0.25)', alignItems: 'center', justifyContent: 'center' },
-  userMarkerInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3b82f6', borderWidth: 2, borderColor: 'white' },
 
   ctaContainer: { marginHorizontal: 16 },
   trackBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#15803d', borderRadius: 16, paddingVertical: 16, elevation: 3, shadowColor: '#15803d', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },

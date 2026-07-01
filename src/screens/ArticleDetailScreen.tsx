@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Share } from 'react-native';
 import { ChevronLeft, Share2, Heart } from 'lucide-react-native';
 
@@ -45,7 +45,7 @@ export function ArticleDetailScreen({ route, navigation }: any) {
 
           <Text style={styles.subHeading}>E-Waste: The Hidden Danger</Text>
           <Text style={styles.paragraph}>
-            Old laptops, phone chargers, and batteries contain hazardous chemicals like lead and mercury. When dumped in regular landfills, these leach into groundwater. Karma Credits partners with R2 certified recyclers to ensure your tech is broken down safely.
+            Old laptops, phone chargers, and batteries contain hazardous chemicals like lead and mercury. When dumped in regular landfills, these leach into groundwater. KarmaCoins XP partners with R2 certified recyclers to ensure your tech is broken down safely.
           </Text>
 
           {/* Engagement Footer */}

@@ -1,6 +1,9 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { addNotificationResponseListener, getLastNotificationResponse } from '../utils/notifications';
 import { SplashScreen } from '../screens/SplashScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -15,10 +18,56 @@ import { TabNavigator } from './TabNavigator';
 
 const Stack = createNativeStackNavigator();
 
-export function RootNavigator() {
+function AuthLoadingScreen() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#16a34a" />
+    </View>
+  );
+}
+
+export function RootNavigator() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const navRef = useRef<NavigationContainerRef<any>>(null);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        const isValid = !!token && token !== 'undefined' && token !== 'null';
+        setIsLoggedIn(isValid);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsLoggedIn(false);
+      }
+    };
+    checkAuthStatus();
+  }, []);
+
+  useEffect(() => {
+    const handleNotificationData = (data: any) => {
+      if (!data?.bookingId || !navRef.current) return;
+      navRef.current.navigate('BookingDetails', { booking: { _id: data.bookingId } });
+    };
+
+    getLastNotificationResponse().then(data => {
+      if (data) handleNotificationData(data);
+    });
+
+    const sub = addNotificationResponseListener(handleNotificationData);
+    return () => sub.remove();
+  }, []);
+
+  if (isLoggedIn === null) {
+    return <AuthLoadingScreen />;
+  }
+
+  return (
+    <NavigationContainer ref={navRef}>
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName={isLoggedIn ? 'App' : 'Splash'}
+      >
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="App" component={TabNavigator} />
@@ -34,3 +83,12 @@ export function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#064e3b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

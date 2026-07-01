@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ShoppingBag, Sparkles, Leaf, ArrowRight } from 'lucide-react-native';
 
@@ -14,8 +15,8 @@ export function StoreScreen({ navigation }: any) {
         <LinearGradient colors={['#064e3b', '#15803d']} style={styles.header}>
           <View style={styles.headerTop}>
             <View>
-              <Text style={styles.headerSubtitle}>SPEND YOUR REWARDS</Text>
-              <Text style={styles.headerTitle}>Karma Store</Text>
+              <Text style={styles.headerSubtitle}>Spend your rewards</Text>
+              <Text style={styles.headerTitle}>Karma store</Text>
             </View>
             <View style={styles.headerIconBox}>
               <ShoppingBag size={24} color="#fff" />
@@ -31,7 +32,7 @@ export function StoreScreen({ navigation }: any) {
             </View>
           </View>
 
-          <Text style={styles.comingSoonText}>Coming Soon!</Text>
+          <Text style={styles.comingSoonText}>Coming soon!</Text>
           <Text style={styles.descText}>
             We're curating a premium collection of zero-waste, eco-friendly products. Soon you'll be able to spend your Karma Coins here on sustainable goodies!
           </Text>
@@ -40,7 +41,7 @@ export function StoreScreen({ navigation }: any) {
             style={styles.actionBtn}
             onPress={() => navigation.navigate('Home')}
           >
-            <Text style={styles.actionBtnText}>Keep Recycling to Earn Coins</Text>
+            <Text style={styles.actionBtnText}>Keep recycling to earn coins</Text>
             <ArrowRight size={20} color="white" />
           </TouchableOpacity>
         </View>
@@ -51,7 +52,7 @@ export function StoreScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   rootContainer: { flex: 1, backgroundColor: '#f4f4f5' }, 
-  topNotchFiller: { position: 'absolute', top: 0, left: 0, right: 0, height: 200, backgroundColor: '#064e3b' },
+  topNotchFiller: { position: 'absolute', top: 0, left: 0, right: 0, height: 60, backgroundColor: '#064e3b' },
   container: { flex: 1 },
   header: {
     paddingTop: 10,
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { color: 'white', fontSize: 28, fontWeight: '900', letterSpacing: 0.5 },
-  headerSubtitle: { color: '#86efac', fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 },
+  headerSubtitle: { color: '#86efac', fontSize: 13, fontWeight: '800', letterSpacing: 1.5, marginBottom: 4 },
   headerIconBox: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
   
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 60 },
