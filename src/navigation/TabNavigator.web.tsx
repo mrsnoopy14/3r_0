@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Home, PackageCheck, Wallet, ShoppingBag, Bell, Leaf, Flame, User } from 'lucide-react-native';
+import { useNotifications } from '../context/NotificationContext';
+import { NotificationPanel } from '../components/shared/NotificationPanel';
 
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { WalletScreen } from '../screens/WalletScreen';
@@ -18,6 +20,9 @@ const NAV_ITEMS = [
 ];
 
 function TopNavbar({ state, navigation }: any) {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { notifications, unreadCount, markRead, markAllRead, clearAll } = useNotifications();
+
   return (
     <View style={s.navOuter}>
       <View style={s.nav}>
@@ -49,14 +54,29 @@ function TopNavbar({ state, navigation }: any) {
 
         {/* Right: Actions */}
         <View style={s.navRight}>
-          <TouchableOpacity style={s.navIconBtn}>
+          <TouchableOpacity style={s.navIconBtn} onPress={() => setShowNotifications(true)}>
             <Bell size={18} color="rgba(255,255,255,0.6)" />
+            {unreadCount > 0 && (
+              <View style={s.bellBadge}>
+                <Text style={s.bellBadgeText}>{unreadCount > 9 ? '9+' : String(unreadCount)}</Text>
+              </View>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity style={s.navAvatar} onPress={() => navigation.navigate('Profile')}>
+          <TouchableOpacity style={s.navAvatar} onPress={() => navigation.getParent()?.navigate('Profile')}>
             <User size={16} color="#052e16" />
           </TouchableOpacity>
         </View>
       </View>
+
+      <NotificationPanel
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onMarkRead={markRead}
+        onMarkAllRead={markAllRead}
+        onClearAll={clearAll}
+      />
     </View>
   );
 }
@@ -95,6 +115,8 @@ const s = StyleSheet.create({
   navTabIndicator: { position: 'absolute', bottom: 0, left: 16, right: 16, height: 3, backgroundColor: '#4ade80', borderTopLeftRadius: 3, borderTopRightRadius: 3 },
 
   navRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  navIconBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  navIconBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', position: 'relative' },
   navAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#4ade80' },
+  bellBadge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#ef4444', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: '#0f172a' },
+  bellBadgeText: { color: 'white', fontSize: 9, fontWeight: '900' },
 });
