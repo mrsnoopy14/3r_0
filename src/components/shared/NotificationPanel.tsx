@@ -19,7 +19,7 @@ interface Props {
   onClearAll: () => void;
 }
 
-const PANEL_WIDTH = SCREEN_WIDTH * 0.9;
+const PANEL_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 420);
 
 const TYPE_CONFIG: Record<string, {
   icon: (size: number, color: string) => React.ReactNode;

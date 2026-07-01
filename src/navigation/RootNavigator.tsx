@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addNotificationResponseListener, getLastNotificationResponse } from '../utils/notifications';
@@ -15,6 +15,7 @@ import { ReferralScreen } from '../screens/ReferralScreen';
 import { OrderTrackingScreen } from '../screens/OrderTrackingScreen';
 import { BookingDetailsScreen } from '../screens/BookingDetailsScreen';
 import { TabNavigator } from './TabNavigator';
+import { navigationRef } from './navRef';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,7 +29,7 @@ function AuthLoadingScreen() {
 
 export function RootNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const navRef = useRef<NavigationContainerRef<any>>(null);
+  const navRef = navigationRef;
 
   useEffect(() => {
     const checkAuthStatus = async () => {

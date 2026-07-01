@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Animated, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Truck, Gamepad2, Coins, ChevronRight, Package, Users, Gift, BookOpen, Star, Flame, Recycle, ArrowRight, Zap, Sparkles, Shield, Trophy, Calendar, X, CheckCircle2, BadgeCheck, ShieldCheck } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,6 +69,11 @@ const STATUS_CLR: any = {
 };
 
 export function DashboardScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const pad = isMobile ? 16 : 32;
+
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -125,20 +130,20 @@ export function DashboardScreen({ navigation }: any) {
       <LinearGradient colors={['#052e16', '#064e3b', '#0f766e']} style={z.hero}>
         <View style={z.heroDecor1} />
         <View style={z.heroDecor2} />
-        <View style={z.container}>
+        <View style={[z.container, { paddingHorizontal: pad }]}>
 
-          {/* Hero content — balance left, stats right */}
-          <View style={z.heroGrid}>
+          {/* Hero content */}
+          <View style={[z.heroGrid, isMobile && { flexDirection: 'column', gap: 20 }]}>
             {/* Left: Greeting + Balance */}
             <View style={z.heroLeft}>
               <Text style={z.heroGreet}>Welcome back,</Text>
-              <Text style={z.heroName}>{userName || '...'}</Text>
+              <Text style={[z.heroName, isMobile && { fontSize: 18 }]}>{userName || '...'}</Text>
               <View style={z.heroBalance}>
                 <View style={z.heroCoinGlow}>
-                  <KarmaCoin size={64} glow animated />
+                  <KarmaCoin size={isMobile ? 48 : 64} glow animated />
                 </View>
                 <View>
-                  <Text style={z.heroBalNum}>{balance.toLocaleString()}</Text>
+                  <Text style={[z.heroBalNum, isMobile && { fontSize: 28 }]}>{balance.toLocaleString()}</Text>
                   <Text style={z.heroBalLabel}>Karma Coins</Text>
                 </View>
               </View>
@@ -150,15 +155,15 @@ export function DashboardScreen({ navigation }: any) {
               </View>
             </View>
 
-            {/* Right: Stats grid */}
-            <View style={z.heroRight}>
+            {/* Stats grid */}
+            <View style={[z.heroRight, isMobile && { flexWrap: 'wrap' }]}>
               {[
                 { icon: Coins, color: '#4ade80', val: balance.toLocaleString(), label: 'Total coins' },
                 { icon: Flame, color: '#fb923c', val: `${streak}`, label: 'Day streak' },
                 { icon: Trophy, color: '#c084fc', val: `${quizStreak}`, label: 'Quiz streak' },
                 { icon: Package, color: '#22d3ee', val: `${totalPickups}`, label: 'Pickups done' },
               ].map((st, i) => (
-                <View key={i} style={z.statCard}>
+                <View key={i} style={[z.statCard, isMobile && { width: '48%' }]}>
                   <View style={z.statTop}>
                     <View style={[z.statIconBg, { backgroundColor: st.color + '20' }]}>
                       <st.icon size={18} color={st.color} />
@@ -174,8 +179,8 @@ export function DashboardScreen({ navigation }: any) {
       </LinearGradient>
 
       {/* ════════ TWO ACTION CARDS: Schedule + Quiz ════════ */}
-      <View style={[z.container, { marginTop: 24 }]}>
-        <View style={z.actionPair}>
+      <View style={[z.container, { marginTop: 24, paddingHorizontal: pad }]}>
+        <View style={[z.actionPair, isMobile && { flexDirection: 'column' }]}>
           {/* Schedule Pickup */}
           <TouchableOpacity style={z.actionCard} activeOpacity={0.85} onPress={() => nav('SchedulePickup')}>
             <LinearGradient colors={['#052e16', '#166534']} style={z.actionCardGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -220,7 +225,7 @@ export function DashboardScreen({ navigation }: any) {
       </View>
 
       {/* ════════ DISCOVER FEATURES ════════ */}
-      <View style={[z.container, { marginTop: 28 }]}>
+      <View style={[z.container, { marginTop: 28, paddingHorizontal: pad }]}>
         <View style={z.sectionHead}>
           <View>
             <Text style={z.sectionLabel}>EXPLORE</Text>
@@ -233,7 +238,7 @@ export function DashboardScreen({ navigation }: any) {
             const icons = [Truck, Gift, BookOpen, Recycle, Zap, Shield];
             const Icon = icons[i] || Package;
             return (
-              <TouchableOpacity key={f.id} style={z.discoverCard} activeOpacity={0.85} onPress={() => setSelectedFeature(f)}>
+              <TouchableOpacity key={f.id} style={[z.discoverCard, isMobile && { width: '48%' }]} activeOpacity={0.85} onPress={() => setSelectedFeature(f)}>
                 <LinearGradient colors={f.gradient} style={z.discoverCardInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                   <View style={z.discoverCardDecor} />
                   <View style={z.discoverIconBg}>
@@ -252,7 +257,7 @@ export function DashboardScreen({ navigation }: any) {
       </View>
 
       {/* ════════ RECENT ORDERS (full width) ════════ */}
-      <View style={[z.container, { marginTop: 28 }]}>
+      <View style={[z.container, { marginTop: 28, paddingHorizontal: pad }]}>
         <View style={z.sectionHead}>
           <View>
             <Text style={z.sectionLabel}>ACTIVITY</Text>
@@ -271,9 +276,31 @@ export function DashboardScreen({ navigation }: any) {
               <Text style={z.emptyBtnText}>Schedule your first pickup</Text>
             </TouchableOpacity>
           </View>
+        ) : isMobile ? (
+          <View style={{ gap: 10 }}>
+            {recentOrders.map((order, i) => {
+              const sc = STATUS_CLR[order.status] || STATUS_CLR.Scheduled;
+              return (
+                <TouchableOpacity key={i} style={z.mobileOrderCard} onPress={() => nav('BookingDetails', { booking: order.raw })} activeOpacity={0.7}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={z.orderDot}><Package size={14} color="#15803d" /></View>
+                      <Text style={z.orderItemText}>{order.type}</Text>
+                    </View>
+                    <View style={[z.statusPill, { backgroundColor: sc.bg }]}>
+                      <Text style={[z.statusPillText, { color: sc.text }]}>{order.status}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={z.ordersCellText}>{order.id} · {order.date}</Text>
+                    <Text style={z.orderCoinsText}>{order.credits > 0 ? `+${order.credits} coins` : '—'}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         ) : (
           <View style={z.ordersTable}>
-            {/* Header */}
             <View style={z.ordersHead}>
               <Text style={[z.ordersHeadText, { flex: 2 }]}>Item</Text>
               <Text style={[z.ordersHeadText, { flex: 1.5 }]}>Order ID</Text>
@@ -282,7 +309,6 @@ export function DashboardScreen({ navigation }: any) {
               <Text style={[z.ordersHeadText, { flex: 1, textAlign: 'right' }]}>Coins</Text>
               <View style={{ width: 24 }} />
             </View>
-            {/* Rows */}
             {recentOrders.map((order, i) => {
               const sc = STATUS_CLR[order.status] || STATUS_CLR.Scheduled;
               return (
@@ -308,11 +334,11 @@ export function DashboardScreen({ navigation }: any) {
       </View>
 
       {/* ════════ REFER BANNER ════════ */}
-      <View style={[z.container, { marginTop: 28 }]}>
-        <LinearGradient colors={['#052e16', '#166534']} style={z.referBanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+      <View style={[z.container, { marginTop: 28, paddingHorizontal: pad }]}>
+        <LinearGradient colors={['#052e16', '#166534']} style={[z.referBanner, isMobile && { flexDirection: 'column', gap: 16, padding: 20 }]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
           <View style={z.referBannerDecor} />
-          <View style={{ flex: 1, zIndex: 1 }}>
-            <Text style={z.referTitle}>Invite friends, earn together</Text>
+          <View style={{ flex: isMobile ? undefined : 1, zIndex: 1 }}>
+            <Text style={[z.referTitle, isMobile && { fontSize: 18 }]}>Invite friends, earn together</Text>
             <Text style={z.referSub}>Share your referral code and both of you earn bonus Karma Coins on their first pickup.</Text>
           </View>
           <TouchableOpacity style={z.referBtn} onPress={() => nav('Referral')}>
@@ -436,6 +462,7 @@ const z = StyleSheet.create({
   statusPillText: { fontSize: 11, fontWeight: '800' },
   orderCoinsText: { fontSize: 14, fontWeight: '800', color: '#16a34a' },
 
+  mobileOrderCard: { backgroundColor: 'white', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
   emptyOrders: { backgroundColor: 'white', borderRadius: 20, padding: 50, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#e2e8f0' },
   emptyText: { color: '#94a3b8', fontSize: 15, fontWeight: '600' },
   emptyBtn: { backgroundColor: '#15803d', borderRadius: 14, paddingHorizontal: 24, paddingVertical: 14, marginTop: 8 },
