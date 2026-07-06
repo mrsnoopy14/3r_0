@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, StatusBar,
   ActivityIndicator, Animated, Alert, BackHandler, Dimensions,
@@ -34,8 +34,8 @@ function Confetti() {
       Animated.loop(
         Animated.sequence([
           Animated.delay(p.delay),
-          Animated.timing(p.anim, { toValue: 1, duration: p.duration, useNativeDriver: true }),
-          Animated.timing(p.anim, { toValue: 0, duration: 0, useNativeDriver: true }),
+          Animated.timing(p.anim, { toValue: 1, duration: p.duration, useNativeDriver: false }),
+          Animated.timing(p.anim, { toValue: 0, duration: 0, useNativeDriver: false }),
         ])
       ).start();
     });
@@ -69,7 +69,7 @@ function Confetti() {
 
 const TIMER_DURATION = 20;
 
-// Local date string — quiz resets at local midnight (12:00 AM)
+// Local date string â€” quiz resets at local midnight (12:00 AM)
 const getUTCDateStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -140,7 +140,7 @@ export function QuizScreen({ navigation }: any) {
       const d = new Date();
       d.setUTCDate(d.getUTCDate() - 1);
       const yesterdayUTC = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-      // Old format was toDateString() e.g. "Wed May 28 2026" — treat as stale if not YYYY-MM-DD
+      // Old format was toDateString() e.g. "Wed May 28 2026" â€” treat as stale if not YYYY-MM-DD
       const isValidFormat = storedDate ? /^\d{4}-\d{2}-\d{2}$/.test(storedDate) : false;
       const isToday = isValidFormat && storedDate === todayUTC;
       const isYesterday = isValidFormat && storedDate === yesterdayUTC;
@@ -166,7 +166,7 @@ export function QuizScreen({ navigation }: any) {
     return () => sub.remove();
   }, [screenState]);
 
-  // Network connectivity check — pauses the quiz when connection drops
+  // Network connectivity check â€” pauses the quiz when connection drops
   useEffect(() => {
     const checkNet = () => {
       const controller = new AbortController();
@@ -210,7 +210,7 @@ export function QuizScreen({ navigation }: any) {
     return () => anim.stop();
   }, [currentQ, screenState, isOffline]);
 
-  // Countdown integer — paused while offline
+  // Countdown integer â€” paused while offline
   useEffect(() => {
     if (screenState !== 'playing' || selectedAnswer !== null || isSubmitting || isOffline) return;
     if (timeLeft === 0) {
@@ -350,7 +350,7 @@ export function QuizScreen({ navigation }: any) {
     }
   };
 
-  // ── INIT ──
+  // â”€â”€ INIT â”€â”€
   if (screenState === 'init') {
     return (
       <View style={styles.fullCenter}>
@@ -360,7 +360,7 @@ export function QuizScreen({ navigation }: any) {
     );
   }
 
-  // ── RESULTS ──
+  // â”€â”€ RESULTS â”€â”€
   if (screenState === 'results') {
     const isPerfect = correctCount === questions.length && questions.length > 0;
     return (
@@ -382,7 +382,7 @@ export function QuizScreen({ navigation }: any) {
               <Text style={styles.resultsCoinsValue}>+{totalCoins}</Text>
             </View>
             <Text style={styles.resultsCardNote}>
-              {totalCoins > 0 ? 'Coins added to your Karma Wallet!' : 'Keep practicing — try again tomorrow!'}
+              {totalCoins > 0 ? 'Coins added to your Karma Wallet!' : 'Keep practicing â€” try again tomorrow!'}
             </Text>
             <View style={styles.streakPill}>
               <Flame size={16} color="#f97316" fill="#f97316" />
@@ -399,7 +399,7 @@ export function QuizScreen({ navigation }: any) {
     );
   }
 
-  // ── LOBBY ──
+  // â”€â”€ LOBBY â”€â”€
   if (screenState === 'lobby') {
     return (
       <View style={styles.container}>
@@ -411,7 +411,7 @@ export function QuizScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <View style={styles.lobbyIconBg}>
-            <Text style={styles.lobbyIconEmoji}>🌿</Text>
+            <Text style={styles.lobbyIconEmoji}>ðŸŒ¿</Text>
           </View>
           <Text style={styles.lobbyTitle}>Daily Eco-Quiz</Text>
           <Text style={styles.lobbySub}>Test your eco-knowledge and earn Karma Coins!</Text>
@@ -424,10 +424,10 @@ export function QuizScreen({ navigation }: any) {
           )}
 
           <View style={styles.rulesCard}>
-            <RuleRow icon="❓" text="5 questions per day" />
-            <RuleRow icon="⏱️" text="20 seconds per question" />
-            <RuleRow icon="🪙" text="5 coins per question" />
-            <RuleRow icon="🏆" text="Max 25 coins per day" />
+            <RuleRow icon="â“" text="5 questions per day" />
+            <RuleRow icon="â±ï¸" text="20 seconds per question" />
+            <RuleRow icon="ðŸª™" text="5 coins per question" />
+            <RuleRow icon="ðŸ†" text="Max 25 coins per day" />
           </View>
 
           {isLocked ? (
@@ -456,7 +456,7 @@ export function QuizScreen({ navigation }: any) {
     );
   }
 
-  // ── PLAYING ──
+  // â”€â”€ PLAYING â”€â”€
   const question = questions[currentQ];
   const progressPct = (currentQ / questions.length) * 100;
   const isTimedOut = selectedAnswer === '__timeout__';

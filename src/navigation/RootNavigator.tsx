@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -66,7 +66,11 @@ export function RootNavigator() {
   return (
     <NavigationContainer ref={navRef}>
       <Stack.Navigator
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { flex: 1 },
+          animationEnabled: Platform.OS !== 'web',
+        }}
         initialRouteName={isLoggedIn ? 'App' : 'Splash'}
       >
         <Stack.Screen name="Splash" component={SplashScreen} />

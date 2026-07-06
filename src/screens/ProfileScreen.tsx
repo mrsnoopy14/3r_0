@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Animated, ActivityIndicator, Alert } from 'react-native';
+﻿import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Animated, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, User, MapPin, Flame, Settings, HeartHandshake, LogOut, FileText, Trophy, X, Mail, Phone, ShieldCheck, CheckCircle, CalendarDays, UserSquare2, Heart, Briefcase } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { KarmaCoin } from '../components/shared/KarmaCoin';
@@ -156,7 +157,7 @@ export function ProfileScreen({ navigation }: any) {
     ? citiesForState.filter(c => c.toLowerCase().includes(addressForm.city.toLowerCase()))
     : citiesForState;
 
-  // Address Modal State — structured fields
+  // Address Modal State â€” structured fields
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [addressForm, setAddressForm] = useState({
     flatNo: '', street: '', city: '', state: '', pincode: ''
@@ -195,11 +196,11 @@ export function ProfileScreen({ navigation }: any) {
     setAddressErrors({ flatNo: '', street: '', city: '', state: '', pincode: '' });
     setAddressTouched({ flatNo: false, street: false, city: false, state: false, pincode: false });
     setAddressModalVisible(true);
-    Animated.spring(addressSlideAnim, { toValue: 1, useNativeDriver: true, bounciness: 4 }).start();
+    Animated.spring(addressSlideAnim, { toValue: 1, useNativeDriver: false, bounciness: 4 }).start();
   };
 
   const closeAddressModal = () => {
-    Animated.timing(addressSlideAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setAddressModalVisible(false));
+    Animated.timing(addressSlideAnim, { toValue: 0, duration: 200, useNativeDriver: false }).start(() => setAddressModalVisible(false));
   };
 
   const handleSaveAddress = async () => {
@@ -261,7 +262,7 @@ export function ProfileScreen({ navigation }: any) {
     if (modalVisible) {
       Animated.spring(slideAnim, {
         toValue: 1,
-        useNativeDriver: true,
+        useNativeDriver: false,
         bounciness: 4,
       }).start();
     } else {
@@ -281,7 +282,7 @@ export function ProfileScreen({ navigation }: any) {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 200,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start(() => setModalVisible(false));
   };
 
@@ -289,7 +290,7 @@ export function ProfileScreen({ navigation }: any) {
     if (demoModalVisible) {
       Animated.spring(demoSlideAnim, {
         toValue: 1,
-        useNativeDriver: true,
+        useNativeDriver: false,
         bounciness: 4,
       }).start();
     } else {
@@ -301,7 +302,7 @@ export function ProfileScreen({ navigation }: any) {
     Animated.timing(demoSlideAnim, {
       toValue: 0,
       duration: 200,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start(() => setDemoModalVisible(false));
   };
 
@@ -718,7 +719,7 @@ export function ProfileScreen({ navigation }: any) {
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => setFlowStep('form')}>
-                  <Text style={{ color: '#64748b', fontWeight: '600', fontSize: 13 }}>← Back to edit</Text>
+                  <Text style={{ color: '#64748b', fontWeight: '600', fontSize: 13 }}>â† Back to edit</Text>
                 </TouchableOpacity>
               </View>
             )}
