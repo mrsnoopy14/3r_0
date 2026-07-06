@@ -287,19 +287,19 @@ const styles = StyleSheet.create({
   scheduleBtn: { marginTop: 24, backgroundColor: '#15803d', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 100, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   scheduleBtnText: { color: 'white', fontWeight: '800', fontSize: 15 },
   
-  orderCard: { backgroundColor: 'white', borderRadius: 24, padding: 18, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 20, borderWidth: 1, borderColor: '#f1f5f9' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 14 },
+  orderCard: { backgroundColor: '#dcfce7', borderRadius: 24, padding: 18, elevation: 6, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 20, borderWidth: 1, borderColor: '#bbf7d0' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#bbf7d0', paddingBottom: 14 },
   orderId: { fontSize: 14, color: '#64748b', fontWeight: '800', letterSpacing: 0.5 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, gap: 6 },
   statusText: { fontSize: 12, fontWeight: '800' },
   
   cardBody: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 16 },
-  iconBox: { width: 52, height: 52, backgroundColor: '#f0fdf4', borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 52, height: 52, backgroundColor: '#bbf7d0', borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   infoBox: { flex: 1 },
   orderType: { fontSize: 16, fontWeight: '800', color: '#0f172a', marginBottom: 6 },
   orderDate: { fontSize: 13, color: '#64748b', fontWeight: '600' },
   
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: 14, borderRadius: 16 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#bbf7d0', padding: 14, borderRadius: 16 },
   creditsBox: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   creditsLabel: { fontSize: 13, color: '#64748b', fontWeight: '700' },
   creditsRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
