@@ -45,7 +45,7 @@ export const authService = {
   // Signup / Register — otpToken from verifyOtp required
   register: async (data: { name: string, email: string, phone: string, password: string, otpToken: string }) => {
     try {
-      const response = await api.post('/api/auth/register', data);
+      const response = await api.post('/api/v1/auth/register', data);
       return response.data;
     } catch (error: any) {
       console.error('Register Error:', error?.response?.data || error);
@@ -56,14 +56,14 @@ export const authService = {
   // Reset Password — phone + otpToken from verifyOtp required
   resetPassword: async (phone: string, newPassword: string, otpToken: string) => {
     try {
-      const response = await api.post('/api/auth/reset-password', { phone, newPassword, otpToken });
+      const response = await api.post('/api/v1/auth/reset-password', { phone, newPassword, otpToken });
       return response.data;
     } catch (error: any) {
       console.error('Reset Password Error:', error?.response?.data || error);
       throw error;
     }
   },
-  
+
   // Google Sign-In — send idToken to backend, receive our JWT
   googleLogin: async (idToken: string) => {
     try {
@@ -83,17 +83,14 @@ export const authService = {
     }
   },
 
-  // Send OTP — phone-based, purpose required
-  // purpose: 'registration' | 'forgot-password' | 'change-phone' | 'change-email'
   sendOtp: async (phone: string, purpose: string) => {
-    const response = await api.post('/api/auth/send-otp', { phone, purpose });
-    return response.data; // data.retryAfter = seconds until resend allowed
+    const response = await api.post('/api/v1/auth/send-otp', { phone, purpose });
+    return response.data;
   },
 
-  // Verify OTP — returns otpToken (keep in memory only, valid 10 min)
   verifyOtp: async (phone: string, otp: string, purpose: string) => {
-    const response = await api.post('/api/auth/verify-otp', { phone, otp, purpose });
-    return response.data; // data.otpToken
+    const response = await api.post('/api/v1/auth/verify-otp', { phone, otp, purpose });
+    return response.data;
   },
 
   // Logout
