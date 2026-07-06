@@ -78,16 +78,21 @@ export function WebFooter() {
 
           {/* Download App */}
           <View style={[s.col, isMobile && { flex: undefined }]}>
-            <Text style={s.colTitle}>Get the app</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <Text style={s.colTitle}>Get the app</Text>
+              <View style={s.comingSoonBadge}>
+                <Text style={s.comingSoonText}>Coming Aug 2026</Text>
+              </View>
+            </View>
             <View style={isMobile ? { flexDirection: 'row', gap: 10 } : {}}>
-              <TouchableOpacity style={[s.storeBtn, isMobile && { flex: 1 }]}>
+              <TouchableOpacity style={[s.storeBtn, s.storeBtnDisabled, isMobile && { flex: 1 }]} activeOpacity={1}>
                 <Text style={s.storeBtnIcon}>▶</Text>
                 <View>
                   <Text style={s.storeBtnSub}>GET IT ON</Text>
                   <Text style={s.storeBtnText}>Google Play</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity style={[s.storeBtn, isMobile && { flex: 1 }]}>
+              <TouchableOpacity style={[s.storeBtn, s.storeBtnDisabled, isMobile && { flex: 1 }]} activeOpacity={1}>
                 <Text style={s.storeBtnIcon}>●</Text>
                 <View>
                   <Text style={s.storeBtnSub}>DOWNLOAD ON</Text>
@@ -134,9 +139,12 @@ const s = StyleSheet.create({
   contactText: { color: '#94a3b8', fontSize: 13, fontWeight: '500', flex: 1 },
 
   storeBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10, borderWidth: 1, borderColor: '#334155' },
+  storeBtnDisabled: { opacity: 0.5 },
   storeBtnIcon: { color: 'white', fontSize: 16 },
   storeBtnSub: { color: '#94a3b8', fontSize: 8, fontWeight: '700', letterSpacing: 1 },
   storeBtnText: { color: 'white', fontSize: 13, fontWeight: '700' },
+  comingSoonBadge: { backgroundColor: '#16a34a', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
+  comingSoonText: { color: 'white', fontSize: 10, fontWeight: '800' },
 
   bottomBar: { borderTopWidth: 1, borderTopColor: '#1e293b' },
   bottomContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18 },
