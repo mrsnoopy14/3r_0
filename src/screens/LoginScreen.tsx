@@ -99,6 +99,12 @@ export function LoginScreen({ navigation }: any) {
   const [isOffline, setIsOffline] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [signupErrors, setSignupErrors] = useState<{ name?: string; phone?: string; password?: string; general?: string }>({});
+  // OTP token — memory only, never persisted (valid 10 min)
+  const [otpToken, setOtpToken] = useState('');
+  // Resend countdown timer (seconds), driven by server retryAfter
+  const [resendTimer, setResendTimer] = useState(0);
+  // Phone used in forgot password flow
+  const [forgotPhone, setForgotPhone] = useState('');
 
   // Demographics State
   const [age, setAge] = useState('');
@@ -116,6 +122,13 @@ export function LoginScreen({ navigation }: any) {
       setIsOffline(false);
     }
   }, [step]);
+
+  // Resend OTP countdown timer
+  React.useEffect(() => {
+    if (resendTimer <= 0) return;
+    const t = setTimeout(() => setResendTimer(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendTimer]);
 
   const handleGoogleSignIn = async () => {
     if (!GoogleSignin) {
@@ -192,7 +205,8 @@ export function LoginScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      await authService.sendSignupOtp(email);
+      const res = await authService.sendOtp(phone.trim(), 'registration');
+      setResendTimer(res?.data?.retryAfter || 60);
       setSignupOtp(['', '', '', '', '', '']);
       setStep('verify_signup_otp');
     } catch (error: any) {
@@ -209,27 +223,29 @@ export function LoginScreen({ navigation }: any) {
 
   const handleVerifySignupOtp = async () => {
     const otp = signupOtp.join('');
-    if (otp.length < 6) {
-      Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP sent to your email.');
-      return;
-    }
+    if (otp.length < 6) return;
     setIsLoading(true);
     try {
-      await authService.verifySignupOtp(email, otp);
-      await authService.register({ name, email, phone, password });
+      const verifyRes = await authService.verifyOtp(phone.trim(), otp, 'registration');
+      const token = verifyRes?.data?.otpToken;
+      if (!token) throw new Error('OTP verification failed — no token received.');
+      await authService.register({ name, email, phone: phone.trim(), password, otpToken: token });
       try {
         await authService.login(email, password);
         setStep('demographics');
       } catch (_) {
-        Alert.alert(
-          'Account created!',
-          'Your account was created successfully. Please login with your credentials.',
-          [{ text: 'Login', onPress: () => setStep('login') }]
-        );
+        Alert.alert('Account created!', 'Your account was created. Please log in.', [{ text: 'Login', onPress: () => setStep('login') }]);
       }
     } catch (error: any) {
-      const msg = error?.response?.data?.message;
-      Alert.alert('Verification failed', msg || 'Invalid or expired OTP. Please try again.');
+      const msg = error?.response?.data?.message || error?.message;
+      // 429 = too many attempts, send back to phone entry
+      if (error?.response?.status === 429) {
+        setSignupOtp(['', '', '', '', '', '']);
+        setStep('signup');
+        setSignupErrors({ general: msg || 'Too many attempts. Please request a new OTP.' });
+      } else {
+        Alert.alert('Verification failed', msg || 'Invalid or expired OTP. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -307,17 +323,31 @@ export function LoginScreen({ navigation }: any) {
       Alert.alert('Passwords do not match', 'New password and confirm password must be the same.');
       return;
     }
+    if (!otpToken) {
+      Alert.alert('Session expired', 'OTP session expired. Please start again.');
+      setResetSubStep('send_otp');
+      return;
+    }
     setIsLoading(true);
     try {
-      const res = await authService.resetPassword(identifier.trim(), newPassword);
-      if (res.success) {
-        Alert.alert("Success", "Password reset successfully! You can now log in.");
-        setPassword('');
-        setNewPassword('');
-        setStep('login');
-      }
+      await authService.resetPassword(forgotPhone.trim(), newPassword, otpToken);
+      setOtpToken('');
+      setPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setForgotPhone('');
+      Alert.alert('Password reset!', 'Your password has been reset successfully. Please log in.');
+      setStep('login');
     } catch (error: any) {
-      Alert.alert("Reset failed", error?.response?.data?.message || 'Failed to reset password.');
+      const msg = error?.response?.data?.message || 'Failed to reset password.';
+      // expired/invalid token — restart flow
+      if (error?.response?.status === 400 && msg.toLowerCase().includes('expired')) {
+        setOtpToken('');
+        setResetSubStep('send_otp');
+        Alert.alert('Session expired', 'OTP expired. Please request a new one.');
+      } else {
+        Alert.alert('Reset failed', msg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -455,17 +485,27 @@ export function LoginScreen({ navigation }: any) {
           <View style={styles.stepContent}>
             <View>
               <Text style={styles.title}>Forgot password 🔐</Text>
-              <Text style={styles.subtitle}>We'll send an OTP to verify your identity</Text>
+              <Text style={styles.subtitle}>Enter your registered phone number</Text>
             </View>
-            {/* Read-only email display */}
-            <View style={styles.readonlyEmailBox}>
-              <Lock size={16} color="#64748b" />
-              <Text style={styles.readonlyEmailText} numberOfLines={1}>{identifier}</Text>
-            </View>
+            <InputField
+              placeholder="Registered phone number (10 digits)"
+              value={forgotPhone}
+              onChange={(v: string) => setForgotPhone(v.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              maxLength={10}
+              icon={<User size={18} color="#94a3b8" />}
+              autoFocus
+            />
             <PrimaryButton onPress={async () => {
+              if (!/^\d{10}$/.test(forgotPhone.trim())) {
+                Alert.alert('Invalid phone', 'Please enter a valid 10-digit phone number.');
+                return;
+              }
               setIsLoading(true);
               try {
-                await authService.sendForgotPasswordOtp(identifier.trim());
+                const res = await authService.sendOtp(forgotPhone.trim(), 'forgot-password');
+                setResendTimer(res?.data?.retryAfter || 60);
+                setOtpValue('');
                 setResetSubStep('verify_otp');
               } catch (error: any) {
                 const msg = error?.response?.data?.message;
@@ -473,7 +513,7 @@ export function LoginScreen({ navigation }: any) {
               } finally {
                 setIsLoading(false);
               }
-            }} loading={isLoading}>
+            }} disabled={forgotPhone.length !== 10} loading={isLoading}>
               <Text style={styles.buttonText}>Send OTP</Text>
               <ArrowRight size={18} color="#fff" />
             </PrimaryButton>
@@ -490,29 +530,40 @@ export function LoginScreen({ navigation }: any) {
           <View style={styles.stepContent}>
             <View>
               <Text style={styles.title}>Enter OTP 📩</Text>
-              <Text style={styles.subtitle}>OTP sent to {identifier}</Text>
+              <Text style={styles.subtitle}>OTP sent to +91 {forgotPhone}</Text>
             </View>
             <InputField
               placeholder="Enter 6-digit OTP"
               value={otpValue}
-              onChange={(v: string) => setOtpValue(v.replace(/[^0-9]/g, ''))}
+              onChange={(v: string) => {
+                const clean = v.replace(/[^0-9]/g, '');
+                setOtpValue(clean);
+              }}
               keyboardType="number-pad"
               maxLength={6}
               icon={<CheckCircle2 size={18} color="#94a3b8" />}
               autoFocus
             />
             <PrimaryButton onPress={async () => {
-              if (otpValue.length < 6) {
-                Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP sent to your email.');
-                return;
-              }
+              if (otpValue.length < 6) return;
               setIsLoading(true);
               try {
-                await authService.verifyForgotPasswordOtp(identifier.trim(), otpValue);
+                const res = await authService.verifyOtp(forgotPhone.trim(), otpValue, 'forgot-password');
+                const token = res?.data?.otpToken;
+                if (!token) throw new Error('Verification failed.');
+                setOtpToken(token);
                 setResetSubStep('new_password');
               } catch (error: any) {
-                const msg = error?.response?.data?.message;
-                Alert.alert('Verification failed', msg || 'Invalid or expired OTP. Please try again.');
+                const msg = error?.response?.data?.message || error?.message;
+                if (error?.response?.status === 429) {
+                  // Max attempts hit — force back to phone entry
+                  setOtpToken('');
+                  setOtpValue('');
+                  setResetSubStep('send_otp');
+                  Alert.alert('Too many attempts', msg || 'Please request a new OTP.');
+                } else {
+                  Alert.alert('Verification failed', msg || 'Invalid or expired OTP.');
+                }
               } finally {
                 setIsLoading(false);
               }
@@ -520,10 +571,28 @@ export function LoginScreen({ navigation }: any) {
               <Text style={styles.buttonText}>Verify OTP</Text>
               <ArrowRight size={18} color="#fff" />
             </PrimaryButton>
-            <TouchableOpacity style={{ alignItems: 'center', marginTop: 10 }} onPress={() => setResetSubStep('send_otp')}>
-              <Text style={{ color: '#16a34a', fontWeight: 'bold' }}>Resend OTP</Text>
+            <TouchableOpacity
+              style={{ alignItems: 'center', marginTop: 10 }}
+              disabled={resendTimer > 0}
+              onPress={async () => {
+                if (resendTimer > 0) return;
+                setIsLoading(true);
+                try {
+                  const res = await authService.sendOtp(forgotPhone.trim(), 'forgot-password');
+                  setResendTimer(res?.data?.retryAfter || 60);
+                  setOtpValue('');
+                } catch (error: any) {
+                  Alert.alert('Could not resend', error?.response?.data?.message || 'Please try again.');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              <Text style={{ color: resendTimer > 0 ? '#94a3b8' : '#16a34a', fontWeight: 'bold' }}>
+                {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ alignItems: 'center', marginTop: 8 }} onPress={() => setStep('login')}>
+            <TouchableOpacity style={{ alignItems: 'center', marginTop: 8 }} onPress={() => { setResetSubStep('send_otp'); setOtpValue(''); }}>
               <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Back to login</Text>
             </TouchableOpacity>
           </View>
@@ -630,9 +699,9 @@ export function LoginScreen({ navigation }: any) {
             <View style={styles.otpIconBg}>
               <Lock size={28} color="#15803d" />
             </View>
-            <Text style={styles.otpTitle}>Verify your email</Text>
+            <Text style={styles.otpTitle}>Verify your phone</Text>
             <Text style={styles.otpSubtitle}>We've sent a 6-digit OTP to</Text>
-            <Text style={styles.otpEmail}>{email}</Text>
+            <Text style={styles.otpEmail}>+91 {phone}</Text>
 
             <View style={styles.otpBoxRow}>
               {signupOtp.map((digit, i) => (
@@ -661,16 +730,22 @@ export function LoginScreen({ navigation }: any) {
 
             <TouchableOpacity
               style={styles.otpResendBtn}
+              disabled={resendTimer > 0}
               onPress={async () => {
+                if (resendTimer > 0) return;
                 try {
                   setIsLoading(true);
-                  await authService.sendSignupOtp(email);
-                  Alert.alert('OTP resent', 'A new OTP has been sent to your email.');
-                } catch { Alert.alert('Failed', 'Could not resend OTP.'); }
-                finally { setIsLoading(false); }
+                  const res = await authService.sendOtp(phone.trim(), 'registration');
+                  setResendTimer(res?.data?.retryAfter || 60);
+                  setSignupOtp(['', '', '', '', '', '']);
+                } catch (error: any) {
+                  Alert.alert('Failed', error?.response?.data?.message || 'Could not resend OTP.');
+                } finally { setIsLoading(false); }
               }}
             >
-              <Text style={styles.otpResendText}>Didn't receive? Resend OTP</Text>
+              <Text style={[styles.otpResendText, resendTimer > 0 && { color: '#94a3b8' }]}>
+                {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Didn't receive? Resend OTP"}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setStep('signup')} style={{ marginTop: 8 }}>

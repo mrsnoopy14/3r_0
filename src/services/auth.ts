@@ -42,12 +42,10 @@ export const authService = {
     }
   },
 
-  // Signup / Register
-  register: async (data: { name: string, email: string, phone: string, password: string }) => {
+  // Signup / Register — otpToken from verifyOtp required
+  register: async (data: { name: string, email: string, phone: string, password: string, otpToken: string }) => {
     try {
-      const response = await api.post('/api/v1/auth/register', data);
-      // Currently backend register doesn't return a token, just user data.
-      // We might need to login immediately after register or handle it gracefully.
+      const response = await api.post('/api/auth/register', data);
       return response.data;
     } catch (error: any) {
       console.error('Register Error:', error?.response?.data || error);
@@ -55,10 +53,10 @@ export const authService = {
     }
   },
 
-  // Reset Password
-  resetPassword: async (email: string, newPassword: string) => {
+  // Reset Password — phone + otpToken from verifyOtp required
+  resetPassword: async (phone: string, newPassword: string, otpToken: string) => {
     try {
-      const response = await api.post('/api/v1/auth/reset-password', { email, newPassword });
+      const response = await api.post('/api/auth/reset-password', { phone, newPassword, otpToken });
       return response.data;
     } catch (error: any) {
       console.error('Reset Password Error:', error?.response?.data || error);
@@ -85,28 +83,17 @@ export const authService = {
     }
   },
 
-  // Send OTP for forgot password
-  sendForgotPasswordOtp: async (email: string) => {
-    const response = await api.post('/api/v1/auth/forgot-password', { email });
-    return response.data;
+  // Send OTP — phone-based, purpose required
+  // purpose: 'registration' | 'forgot-password' | 'change-phone' | 'change-email'
+  sendOtp: async (phone: string, purpose: string) => {
+    const response = await api.post('/api/auth/send-otp', { phone, purpose });
+    return response.data; // data.retryAfter = seconds until resend allowed
   },
 
-  // Verify OTP for forgot password
-  verifyForgotPasswordOtp: async (email: string, otp: string) => {
-    const response = await api.post('/api/v1/auth/verify-otp', { email, otp });
-    return response.data;
-  },
-
-  // Send OTP for signup verification
-  sendSignupOtp: async (email: string) => {
-    const response = await api.post('/api/v1/auth/send-otp', { email });
-    return response.data;
-  },
-
-  // Verify signup OTP
-  verifySignupOtp: async (email: string, otp: string) => {
-    const response = await api.post('/api/v1/auth/verify-otp', { email, otp });
-    return response.data;
+  // Verify OTP — returns otpToken (keep in memory only, valid 10 min)
+  verifyOtp: async (phone: string, otp: string, purpose: string) => {
+    const response = await api.post('/api/auth/verify-otp', { phone, otp, purpose });
+    return response.data; // data.otpToken
   },
 
   // Logout
