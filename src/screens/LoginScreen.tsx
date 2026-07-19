@@ -156,6 +156,12 @@ export function LoginScreen({ navigation }: any) {
       reset_password: 'login',
     };
     const sub = navigation.addListener('beforeRemove', (e: any) => {
+      // Only intercept an actual BACK (hardware/browser/gesture). Our own forward
+      // navigation — e.g. replace('App') after a successful login — dispatches a
+      // REPLACE/NAVIGATE action and MUST pass through, otherwise a valid login
+      // gets cancelled and bounced back to the email step.
+      const actionType = e?.data?.action?.type;
+      if (actionType !== 'GO_BACK' && actionType !== 'POP') return;
       const prevStep = backStep[step];
       if (!prevStep) return;
       e.preventDefault();
