@@ -15,10 +15,17 @@ const { width: W } = Dimensions.get('window');
 const isMobile = W < 768;
 const MAX = 1100;
 
+const KARMA_PHRASE = 'KarmaCoins XP.';
+const HEADLINE_TEXT = `Turn your Plastic, Paper, Metal,\nE-waste & more into ${KARMA_PHRASE}`;
+const KARMA_SPLIT = HEADLINE_TEXT.length - KARMA_PHRASE.length;
+
 export function SplashScreen({ navigation, route }: any) {
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(40)).current;
+  const cursorBlink = useRef(new Animated.Value(1)).current;
+  const coinsPulse = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView>(null);
+  const [typedHeadline, setTypedHeadline] = useState('');
   const sectionY = useRef({ howItWorks: 0, features: 0, rewards: 0 });
   const [nearFooter, setNearFooter] = useState(false);
 
@@ -39,6 +46,40 @@ export function SplashScreen({ navigation, route }: any) {
       Animated.timing(fadeIn, { toValue: 1, duration: 800, useNativeDriver: true }),
       Animated.timing(slideUp, { toValue: 0, duration: 800, useNativeDriver: true }),
     ]).start();
+
+  }, []);
+
+  // Blinking cursor for the headline typewriter.
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(cursorBlink, { toValue: 0, duration: 450, useNativeDriver: true }),
+        Animated.timing(cursorBlink, { toValue: 1, duration: 450, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  // Gentle color pulse on "KarmaCoins XP." once the typewriter reveals it.
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(coinsPulse, { toValue: 1, duration: 1400, useNativeDriver: false }),
+        Animated.timing(coinsPulse, { toValue: 0, duration: 1400, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  const coinsColor = coinsPulse.interpolate({ inputRange: [0, 1], outputRange: ['#4ade80', '#fbbf24'] });
+
+  // Typewriter: types out the headline once on mount, character by character.
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i += 1;
+      setTypedHeadline(HEADLINE_TEXT.slice(0, i));
+      if (i >= HEADLINE_TEXT.length) clearInterval(interval);
+    }, 35);
+    return () => clearInterval(interval);
   }, []);
 
   // Arriving from a Quick Links entry point (e.g. WebFooter) with a target section —
@@ -119,7 +160,11 @@ export function SplashScreen({ navigation, route }: any) {
             </View>
 
             <Text style={[s.heroTitle, isMobile && { fontSize: 36 }]}>
-              Turn your Plastic, Paper, Metal,{'\n'}E-waste & more into KarmaCoins XP.
+              {typedHeadline.length <= KARMA_SPLIT ? typedHeadline : HEADLINE_TEXT.slice(0, KARMA_SPLIT)}
+              {typedHeadline.length > KARMA_SPLIT && (
+                <Animated.Text style={{ color: coinsColor }}>{typedHeadline.slice(KARMA_SPLIT)}</Animated.Text>
+              )}
+              <Animated.Text style={[s.heroCursor, { opacity: cursorBlink }]}>|</Animated.Text>
             </Text>
             <Text style={[s.heroSub, isMobile && { fontSize: 16 }]}>
               India's first circular economy rewards platform — schedule free doorstep pickups for plastic, paper, metal, e-waste & more. Earn real rewards for every kg you recycle.
@@ -146,8 +191,8 @@ export function SplashScreen({ navigation, route }: any) {
             {/* Trust badges */}
             <View style={[s.trustRow, isMobile && { flexDirection: 'column', gap: 12 }]}>
               <View style={s.trustItem}>
-                <Users size={16} color="#4ade80" />
-                <Text style={s.trustText}>1.85 Lakh+ citizens reached</Text>
+                <Clock size={16} color="#4ade80" />
+                <Text style={s.trustText}>Book a pickup in seconds</Text>
               </View>
               <View style={s.trustItem}>
                 <Package size={16} color="#4ade80" />
@@ -346,16 +391,21 @@ const s = StyleSheet.create({
   heroBadgeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ade80' },
   heroBadgeText: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600' },
   heroTitle: { fontSize: 52, fontWeight: '900', color: 'white', letterSpacing: -1.5, lineHeight: 62, marginBottom: 20 },
+  heroCursor: { color: '#4ade80', fontWeight: '400' },
   heroSub: { fontSize: 18, color: 'rgba(255,255,255,0.7)', fontWeight: '500', lineHeight: 28, maxWidth: 600, marginBottom: 36 },
-  heroCTA: { flexDirection: 'row', gap: 16, marginBottom: 40 },
+  heroCTA: { flexDirection: 'row', gap: 16, marginTop: 28, marginBottom: 40 },
   ctaPrimary: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#4ade80', borderRadius: 14, paddingHorizontal: 28, paddingVertical: 16 },
   ctaPrimaryText: { color: '#052e16', fontWeight: '900', fontSize: 16 },
   ctaSecondary: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 14, paddingHorizontal: 24, paddingVertical: 16 },
   ctaSecondaryText: { color: '#4ade80', fontWeight: '700', fontSize: 15 },
   ctaSecondaryBadge: { color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: 11 },
-  trustRow: { flexDirection: 'row', gap: 28 },
-  trustItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  trustText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' },
+  trustRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  trustItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+  },
+  trustText: { color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '700' },
   poweredByBadge: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   poweredByDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#4ade80', alignItems: 'center', justifyContent: 'center' },
   poweredByDotText: { fontSize: 8, fontWeight: '900', color: '#052e16' },
