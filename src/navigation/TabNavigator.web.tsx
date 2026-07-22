@@ -202,8 +202,10 @@ export function TabNavigator() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f8fafc' },
 
-  // Mobile bottom bar
-  bottomBar: { flexDirection: 'row', backgroundColor: '#0f172a', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', height: NAV_HEIGHT },
+  // Mobile bottom bar — `fixed` pins it to the visual viewport bottom on every
+  // phone (the tab bar renders after the scenes in the tree, so in normal flow
+  // it ends up wherever the content ends instead of at the screen bottom).
+  bottomBar: { position: 'fixed' as any, bottom: 0, left: 0, right: 0, zIndex: 100, flexDirection: 'row', backgroundColor: '#0f172a', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', height: NAV_HEIGHT },
   bottomTab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   bottomTabText: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '600' },
   bottomTabTextActive: { color: '#4ade80' },

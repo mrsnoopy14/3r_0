@@ -5,7 +5,7 @@ import { showAlert } from './alert';
 // so the text doesn't visibly change on every re-render/focus.
 export const REDEEM_INFO_TITLE = '🎉 Redemption opens 31st August!';
 export const REDEEM_INFO_MESSAGE =
-  '🪙 10 KarmaCoins XP = ₹1 — cash out starting 31st August. Keep recycling, keep earning! ♻️✨';
+  '10 KarmaCoins XP = ₹1 — cash out starting 31st August. Keep recycling, keep earning! ♻️✨';
 
 // Single switch that flips the Wallet screen's Redeem button from the countdown
 // popup over to the real redeem flow — flip the date (or the flow) here only.
@@ -29,7 +29,7 @@ function buildPopupContent() {
   const { emoji, tagline } = CHEESY_LINES[Math.floor(Math.random() * CHEESY_LINES.length)];
   return {
     title: `${emoji} Redemption opens 31st August!`,
-    message: `${tagline}\n\n🪙 10 KarmaCoins XP = ₹1 — cash out starting 31st August.\nKeep recycling, keep earning! ♻️✨`,
+    message: `${tagline}\n\n10 KarmaCoins XP = ₹1 — cash out starting 31st August.\nKeep recycling, keep earning! ♻️✨`,
   };
 }
 

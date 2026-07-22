@@ -1,36 +1,59 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, Image } from 'react-native';
 
+// The approved KarmaVerse coin — the gold K-coin lifted from the logo
+// (assets/coin.png, generated from logo-icon.png with baked-in gloss/shading).
+// `animated` gives it a periodic 3D spin around the Y axis, like a real coin.
 export function KarmaCoin({ size = 48, glow = false, animated = false }: { size?: number; glow?: boolean; animated?: boolean }) {
+  const spin = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!animated) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(spin, {
+          toValue: 1,
+          duration: 2400,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.delay(2600), // rest between spins so it stays classy, not dizzy
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [animated, spin]);
+
+  const rotateY = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  // Shadows live on this OUTER, non-rotating layer. Putting them on the coin
+  // itself made a static circle show behind it mid-spin as the coin flattened.
+  // While animating we use a soft radial glow (no hard edge) so nothing reads
+  // as a second circle.
+  const aura = glow
+    ? { boxShadow: `0 0 ${size * 0.4}px rgba(243, 186, 47, 0.55)`, borderRadius: size / 2 }
+    : animated
+      ? undefined
+      : { boxShadow: `0 ${Math.max(1, size * 0.06)}px ${size * 0.18}px rgba(0, 0, 0, 0.3)`, borderRadius: size / 2 };
+
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: '#f59e0b',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: size * 0.04,
-        borderColor: 'rgba(255,255,255,0.4)',
-        // @ts-ignore web shadow
-        boxShadow: glow ? `0 0 ${size * 0.5}px rgba(245,158,11,0.7)` : `0 4px 10px rgba(0,0,0,0.3)`,
-      }}
+    <Animated.View
+      // @ts-ignore web-only boxShadow
+      style={{ width: size, height: size, ...aura }}
     >
-      {/* Highlight sheen */}
-      <View
+      <Animated.View
         style={{
-          position: 'absolute',
-          top: '8%',
-          left: '12%',
-          width: '45%',
-          height: '40%',
-          borderRadius: size,
-          backgroundColor: 'rgba(255,255,255,0.4)',
-          transform: [{ rotate: '-35deg' }],
+          width: size,
+          height: size,
+          transform: animated ? [{ perspective: size * 12 }, { rotateY }] : undefined,
         }}
-      />
-      <Text style={{ fontSize: size * 0.42, lineHeight: size * 0.5 }}>♻</Text>
-    </View>
+      >
+        <Image
+          source={require('../../../assets/coin.png')}
+          resizeMode="contain"
+          style={{ width: size, height: size }}
+        />
+      </Animated.View>
+    </Animated.View>
   );
 }
