@@ -167,8 +167,9 @@ export function DashboardScreen({ navigation }: any) {
                 </View>
                 <Text style={z.heroProgressText}>{progress}% to next reward</Text>
               </View>
-              <View style={[z.redeemBanner, isMobile && { maxWidth: '100%' }]}>
-                <Text style={z.redeemBannerText}>{REDEEM_INFO_MESSAGE}</Text>
+              <View style={[z.redeemBanner, { flexDirection: 'row', alignItems: 'center', gap: 8 }, isMobile && { maxWidth: '100%' }]}>
+                <KarmaCoin size={18} />
+                <Text style={[z.redeemBannerText, { flex: 1 }]}>{REDEEM_INFO_MESSAGE}</Text>
               </View>
             </View>
 
@@ -447,7 +448,9 @@ const z = StyleSheet.create({
   heroGreet: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
   heroName: { color: 'white', fontSize: 22, fontWeight: '900', letterSpacing: -0.3, marginBottom: 16 },
   heroBalance: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
-  heroCoinGlow: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(74,222,128,0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(74,222,128,0.2)' },
+  // No background/border circle here — a static ring behind the coin shows
+  // through as a "second circle" while the coin does its 3D spin.
+  heroCoinGlow: { alignItems: 'center', justifyContent: 'center' },
   heroBalNum: { fontSize: 38, fontWeight: '900', color: 'white', letterSpacing: -2 },
   heroBalLabel: { fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: '600', marginTop: 1 },
   heroProgressWrap: { maxWidth: 320 },

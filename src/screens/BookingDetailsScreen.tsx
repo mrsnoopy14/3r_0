@@ -122,7 +122,7 @@ export function BookingDetailsScreen({ navigation, route }: any) {
               <Text style={styles.gridLabel}>Est. Coins</Text>
               <View style={styles.coinsRow}>
                 <Text style={styles.gridValue}>{booking.estCoins} </Text>
-                <Text style={styles.coinEmoji}>🪙</Text>
+                <KarmaCoin size={14} />
               </View>
             </View>
           </View>
@@ -254,7 +254,6 @@ const styles = StyleSheet.create({
   gridLabel: { fontSize: 11, color: '#94a3b8', fontWeight: '600', marginBottom: 4 },
   gridValue: { fontSize: 15, color: '#0f172a', fontWeight: '800' },
   coinsRow: { flexDirection: 'row', alignItems: 'center' },
-  coinEmoji: { fontSize: 14 },
 
   sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a', marginHorizontal: 16, marginBottom: 8 },
 

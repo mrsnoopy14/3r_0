@@ -358,8 +358,9 @@ export function DashboardScreen({ navigation }: any) {
           </View>
 
           {/* Redeem info banner */}
-          <View style={styles.redeemBanner}>
-            <Text style={styles.redeemBannerText}>{REDEEM_INFO_MESSAGE}</Text>
+          <View style={[styles.redeemBanner, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
+            <KarmaCoin size={18} />
+            <Text style={[styles.redeemBannerText, { flex: 1 }]}>{REDEEM_INFO_MESSAGE}</Text>
           </View>
         </View>
       </LinearGradient>

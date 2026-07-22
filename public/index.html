@@ -102,10 +102,14 @@
       body {
         overflow: hidden;
       }
-      /* These styles make the root element full-height */
+      /* These styles make the root element full-height. `100dvh` (dynamic
+         viewport height) tracks mobile browsers' collapsing URL bar — plain
+         100% leaves a dead gap under the app on phones. Older browsers fall
+         back to the 100% line. */
       #root {
         display: flex;
         height: 100%;
+        height: 100dvh;
         flex: 1;
       }
       /* Kill the browser's default black focus ring on inputs — every field
