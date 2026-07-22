@@ -87,6 +87,8 @@ const pages = [
         operatingSystem: 'Android, iOS, Web',
         description:
           "KarmaVerse is India's sustainability rewards ecosystem. Earn KarmaCoins for everyday eco-friendly actions — from doorstep recycling pickups to eco-quizzes — and redeem them for real rewards while creating measurable environmental impact.",
+        disambiguatingDescription:
+          'KarmaVerse (karmaverse.earth) is a real-world recycling and sustainability rewards app operated by 3R Zero Waste in India. It has no connection to any blockchain, NFT, or GameFi project of a similar name.',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
         publisher: { '@type': 'Organization', name: '3R Zero Waste', url: 'https://0waste.co.in/' },
       },
