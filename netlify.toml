@@ -5,6 +5,14 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Legacy URLs from an earlier version of the site — still hold external backlinks and
+# Search Console referrals, so redirect them to their current equivalents instead of
+# silently serving the homepage shell (which the old catch-all below did).
+[[redirects]]
+  from = "/privacy-policy/*"
+  to = "/legal/privacy"
+  status = 301
+
 # Real prerendered files (/, /login, /legal/privacy, /legal/terms, /legal/data-deletion) are served as-is —
 # Netlify only falls through to this catch-all for routes with no matching static file,
 # which covers every other in-app screen (all client-side routed via React Navigation).
