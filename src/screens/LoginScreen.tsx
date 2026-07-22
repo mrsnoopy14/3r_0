@@ -164,6 +164,12 @@ export function LoginScreen({ navigation }: any) {
       reset_password: 'login',
     };
     const sub = navigation.addListener('beforeRemove', (e: any) => {
+      // Only intercept an actual BACK (hardware/browser/gesture). Our own forward
+      // navigation — e.g. replace('App') after a successful login — dispatches a
+      // REPLACE/NAVIGATE action and MUST pass through, otherwise a valid login
+      // gets cancelled and bounced back to the email step.
+      const actionType = e?.data?.action?.type;
+      if (actionType !== 'GO_BACK' && actionType !== 'POP') return;
       const prevStep = backStep[step];
       if (!prevStep) return;
       e.preventDefault();
@@ -1260,7 +1266,7 @@ export function LoginScreen({ navigation }: any) {
           <View style={[styles.headerCircle, { top: -50, right: -40, width: 160, height: 160, opacity: 0.08 }]} />
           <View style={[styles.headerCircle, { bottom: -60, left: -50, width: 140, height: 140, opacity: 0.06 }]} />
           <View style={styles.logoCard}>
-            <Image source={require('../../assets/logo.png')} style={styles.logoImg} resizeMode="contain" />
+            <Image source={require('../../assets/logo-nav.png')} style={styles.logoImg} resizeMode="contain" />
           </View>
         </LinearGradient>
 
@@ -1292,7 +1298,7 @@ const styles = StyleSheet.create({
   headerCircle: { position: 'absolute', borderRadius: 999, backgroundColor: 'white' },
   headerTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', marginTop: 12, letterSpacing: 0.5 },
   logoCard: { alignItems: 'center', justifyContent: 'center' },
-  logoImg: { width: 180, height: 108 },
+  logoImg: { width: 170, height: 80 },
   termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 4 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   checkboxOn: { backgroundColor: '#16a34a', borderColor: '#16a34a' },

@@ -416,7 +416,7 @@ export function SplashScreen({ navigation, route }: any) {
           <View style={[s.container, s.footerContent, isMobile && { flexDirection: 'column', gap: 28, paddingHorizontal: 20 }]}>
             <View style={[s.footerBrand, isMobile && { width: '100%' }]}>
               <View style={s.footerLogoRow}>
-                <Image source={require('../../assets/logo.png')} resizeMode="contain" style={s.footerLogoImg} />
+                <Image source={require('../../assets/logo-nav.png')} resizeMode="contain" style={s.footerLogoImg} />
               </View>
               <Text style={s.footerDesc}>
                 3R Zero Waste® was founded to do waste management differently — turning India's growing waste into value through the circular economy. KarmaVerse is its sustainability rewards ecosystem.
@@ -566,7 +566,7 @@ const s = StyleSheet.create({
   footerContent: { flexDirection: 'row', gap: 32, paddingBottom: 40 },
   footerBrand: { flex: 1.2 },
   footerLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  footerLogoImg: { width: 150, height: 100 },
+  footerLogoImg: { width: 170, height: 80 },
   footerDesc: { color: '#94a3b8', fontSize: 14, fontWeight: '500', lineHeight: 22, maxWidth: 320 },
   footerLinksRow: { flex: 2, flexDirection: 'row', justifyContent: 'space-between' },
   footerLinks: { gap: 12, flex: 1 },
