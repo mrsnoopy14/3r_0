@@ -467,37 +467,50 @@ export function LoginScreen({ navigation }: any) {
   };
 
   const handleContinue = async () => {
-    if (!identifier.trim()) {
-      setEmailError('Please enter your email address.');
+    const raw = identifier.trim();
+    if (!raw) {
+      setEmailError('Please enter your email address or mobile number.');
       return;
     }
 
-    if (identifier.trim().length > 254) {
-      setEmailError('Email address cannot exceed 254 characters.');
-      return;
-    }
+    // All digits → treat as a mobile number, otherwise as an email
+    const isPhoneInput = /^\d+$/.test(raw);
 
-    if (EMOJI_REGEX.test(identifier)) {
-      setEmailError('Email address cannot contain emojis.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(identifier.trim())) {
-      setEmailError('Please enter a valid email address.');
-      return;
+    if (isPhoneInput) {
+      if (!/^[6-9]\d{9}$/.test(raw)) {
+        setEmailError('Please enter a valid 10-digit mobile number starting with 6, 7, 8 or 9.');
+        return;
+      }
+    } else {
+      if (raw.length > 254) {
+        setEmailError('Email address cannot exceed 254 characters.');
+        return;
+      }
+      if (EMOJI_REGEX.test(identifier)) {
+        setEmailError('Email address cannot contain emojis.');
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(raw)) {
+        setEmailError('Please enter a valid email address or mobile number.');
+        return;
+      }
     }
 
     setEmailError('');
 
     setStep('checking');
     try {
-      const res = await authService.checkUser(identifier.trim());
+      const res = await authService.checkUser(raw);
 
       if (res?.data?.isRegistered) {
         setStep('login');
+      } else if (isPhoneInput) {
+        // New user arrived with a phone — prefill it; signup collects the email
+        setPhone(raw);
+        setStep('signup');
       } else {
-        setEmail(identifier.trim());
+        setEmail(raw);
         setStep('signup');
       }
     } catch (error: any) {
@@ -693,13 +706,18 @@ export function LoginScreen({ navigation }: any) {
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.stepContent}>
           <View>
             <Text style={styles.title}>Welcome 👋</Text>
-            <Text style={styles.subtitle}>Enter your email address to get started</Text>
+            <Text style={styles.subtitle}>Enter your email or mobile number to get started</Text>
           </View>
           <InputField
             key="entry-email"
-            placeholder="Email address"
+            placeholder="Email or mobile number"
             value={identifier}
-            onChange={(t: string) => { setIdentifier(t.replace(EMOJI_REGEX_GLOBAL, '')); if (emailError) setEmailError(''); }}
+            onChange={(t: string) => {
+              const cleaned = t.replace(EMOJI_REGEX_GLOBAL, '');
+              // Numeric input = phone: digits only, capped at 10
+              setIdentifier(/^\d+$/.test(cleaned) ? cleaned.slice(0, 10) : cleaned);
+              if (emailError) setEmailError('');
+            }}
             icon={<User size={18} color="#94a3b8" />}
             keyboardType="email-address"
             maxLength={254}
@@ -1555,8 +1573,10 @@ const styles = StyleSheet.create({
   otpTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 8, textAlign: 'center' },
   otpSubtitle: { fontSize: 14, color: '#64748b', fontWeight: '500', textAlign: 'center' },
   otpEmail: { fontSize: 15, color: '#15803d', fontWeight: '800', marginBottom: 28, textAlign: 'center' },
-  otpBoxRow: { flexDirection: 'row', gap: 10, marginBottom: 28, justifyContent: 'center' },
-  otpBox: { width: 48, height: 56, borderRadius: 14, borderWidth: 2, borderColor: '#e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center', fontSize: 22, fontWeight: '900', color: '#0f172a' },
+  // Boxes flex down on narrow phones (6 fixed 48px boxes + gaps need ~390px,
+  // small screens are 320-360) — maxWidth keeps them at 48px on wide screens.
+  otpBoxRow: { flexDirection: 'row', gap: 8, marginBottom: 28, justifyContent: 'center', width: '100%', maxWidth: 360, alignSelf: 'center' },
+  otpBox: { flex: 1, minWidth: 0, maxWidth: 48, height: 56, borderRadius: 14, borderWidth: 2, borderColor: '#e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center', fontSize: 22, fontWeight: '900', color: '#0f172a' },
   otpBoxFilled: { borderColor: '#15803d', backgroundColor: '#f0fdf4' },
   otpResendBtn: { marginTop: 16 },
   otpResendText: { color: '#15803d', fontWeight: '700', fontSize: 14 },

@@ -2,7 +2,8 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Animated, ActivityIndicator } from 'react-native';
 import { WebFooter } from '../components/shared/WebFooter';
 import { showAlert } from '../utils/alert';
-import { ChevronLeft, User, MapPin, Flame, Settings, HeartHandshake, LogOut, FileText, Trophy, X, Mail, Phone, ShieldCheck, CheckCircle, CalendarDays, UserSquare2, Heart, Briefcase, Users, ArrowRight, Gift } from 'lucide-react-native';
+import { ChevronLeft, User, MapPin, Flame, Settings, HeartHandshake, LogOut, FileText, Trophy, X, Mail, Phone, ShieldCheck, CheckCircle, CalendarDays, UserSquare2, Heart, Briefcase, Users, ArrowRight, Gift, Trash2 } from 'lucide-react-native';
+import { addressService, SavedAddress, AddressLabel } from '../services/address';
 import { LinearGradient } from 'expo-linear-gradient';
 import { KarmaCoin } from '../components/shared/KarmaCoin';
 import { profileService } from '../services/profile';
@@ -47,6 +48,11 @@ function SelectionPills({ options, selected, onSelect }: { options: string[], se
   );
 }
 
+// Social logins (Facebook/Google) provide no phone, so the backend stores a dummy
+// number. Anything that isn't a real Indian mobile counts as "not added yet".
+const cleanPhone = (p?: string) => String(p || '').replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+const isRealPhone = (p?: string) => /^[6-9]\d{9}$/.test(cleanPhone(p));
+
 export function ProfileScreen({ navigation }: any) {
   // Main Profile State
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -72,7 +78,7 @@ export function ProfileScreen({ navigation }: any) {
         }
         setUserProfile({
           name: data.name || 'User',
-          phone: data.phone || '+91 00000 00000',
+          phone: isRealPhone(data.phone) ? `+91 ${cleanPhone(data.phone)}` : '',
           email: data.email || '',
           coins: data.karmaCoins || data.coins || 0,
           streak: quizStreak,
@@ -88,7 +94,7 @@ export function ProfileScreen({ navigation }: any) {
         });
         setEditForm({
            name: data.name || 'User',
-           phone: data.phone || '+91 00000 00000',
+           phone: isRealPhone(data.phone) ? cleanPhone(data.phone) : '',
            email: data.email || '',
         });
       } catch (error) {
@@ -161,19 +167,77 @@ export function ProfileScreen({ navigation }: any) {
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
 
-  // Unified map-based address editor (shared with Schedule Pickup)
+  // Saved-addresses manager (multi-address backend — Home/Office/Friend/Other)
+  const [addrMgrVisible, setAddrMgrVisible] = useState(false);
+  const [mgrAddresses, setMgrAddresses] = useState<SavedAddress[]>([]);
+  const [mgrLoading, setMgrLoading] = useState(false);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
+  // Picked on the map, waiting for a label before saving
+  const [mgrPending, setMgrPending] = useState<{ fullAddress: string; coords: [number, number] } | null>(null);
+  const [mgrLabel, setMgrLabel] = useState<AddressLabel>('Home');
+  const [mgrBusy, setMgrBusy] = useState(false);
 
-  const handleAddressSelected = async (address: string, coords: [number, number], _details?: AddressDetails) => {
+  const openAddrMgr = () => {
+    setAddrMgrVisible(true);
+    setMgrLoading(true);
+    addressService.list()
+      .then(setMgrAddresses)
+      .catch(() => showAlert('Could not load addresses', 'Please check your connection and try again.'))
+      .finally(() => setMgrLoading(false));
+  };
+
+  const handleAddressSelected = (address: string, coords: [number, number], _details?: AddressDetails) => {
     setShowAddressSearch(false);
-    setIsSavingAddress(true);
+    setMgrPending({ fullAddress: address, coords });
+    setMgrLabel('Home');
+  };
+
+  const saveMgrPending = async () => {
+    if (!mgrPending || mgrBusy) return;
+    setMgrBusy(true);
     try {
-      await profileService.updateAddress({ fullAddress: address, longitude: coords[0], latitude: coords[1] });
-      setUserProfile((p: any) => ({ ...p, address }));
-    } catch (e) {
-      showAlert('Could not save address', 'Please try again.');
+      const list = await addressService.add({
+        label: mgrLabel,
+        fullAddress: mgrPending.fullAddress,
+        longitude: mgrPending.coords[0],
+        latitude: mgrPending.coords[1],
+      });
+      setMgrAddresses(list);
+      setMgrPending(null);
+    } catch (e: any) {
+      showAlert('Could not save address', e?.response?.data?.message || 'Please try again.');
     } finally {
-      setIsSavingAddress(false);
+      setMgrBusy(false);
+    }
+  };
+
+  const deleteAddress = (addr: SavedAddress) => {
+    showAlert(
+      'Delete address?',
+      `${addr.label} — ${addr.fullAddress}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setMgrAddresses(await addressService.remove(addr._id));
+            } catch {
+              showAlert('Could not delete address', 'Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const makeDefault = async (addr: SavedAddress) => {
+    if (addr.isDefault) return;
+    try {
+      setMgrAddresses(await addressService.setDefault(addr._id));
+    } catch {
+      showAlert('Could not update default address', 'Please try again.');
     }
   };
 
@@ -308,10 +372,13 @@ export function ProfileScreen({ navigation }: any) {
       } else if (addressModalVisible) {
         e.preventDefault();
         closeAddressModal();
+      } else if (addrMgrVisible) {
+        e.preventDefault();
+        setAddrMgrVisible(false);
       }
     });
     return sub;
-  }, [navigation, modalVisible, demoModalVisible, addressModalVisible]);
+  }, [navigation, modalVisible, demoModalVisible, addressModalVisible, addrMgrVisible]);
 
   // Safety net: if the screen is actually left while a modal is open (any path
   // that slips past beforeRemove), kill the modals instantly so their portal
@@ -321,6 +388,8 @@ export function ProfileScreen({ navigation }: any) {
       setModalVisible(false);
       setDemoModalVisible(false);
       setAddressModalVisible(false);
+      setAddrMgrVisible(false);
+      setShowAddressSearch(false);
     });
     return sub;
   }, [navigation]);
@@ -555,7 +624,13 @@ export function ProfileScreen({ navigation }: any) {
                 <Text style={styles.userName} numberOfLines={1} ellipsizeMode="tail">
                   {userProfile?.name}
                 </Text>
-                <Text style={styles.userPhone}>{userProfile?.phone}</Text>
+                {userProfile?.phone ? (
+                  <Text style={styles.userPhone}>{userProfile.phone}</Text>
+                ) : (
+                  <TouchableOpacity onPress={openEditModal} activeOpacity={0.7}>
+                    <Text style={styles.addPhoneLink}>+ Add phone number</Text>
+                  </TouchableOpacity>
+                )}
                 {userProfile?.email ? <Text style={styles.userEmail}>{userProfile.email}</Text> : null}
 
                 {/* Mini Stats Row */}
@@ -599,7 +674,7 @@ export function ProfileScreen({ navigation }: any) {
               <View style={styles.optionsBlock}>
                 <OptionRow onPress={openDemoModal} icon={<UserSquare2 size={18} color="#8b5cf6" />} bg="#f3e8ff" title="Personal details" sub="Age, gender, marital status..." />
                 <View style={styles.divider} />
-                <OptionRow icon={<MapPin size={18} color="#0284c7" />} bg="#f0f9ff" title="Saved addresses" sub={userProfile?.address || 'Manage home, office locations'} onPress={() => setShowAddressSearch(true)} />
+                <OptionRow icon={<MapPin size={18} color="#0284c7" />} bg="#f0f9ff" title="Saved addresses" sub="Manage home, office & other locations" onPress={openAddrMgr} />
                 <View style={styles.divider} />
                 <OptionRow
                   icon={<Flame size={18} color="#ea580c" />}
@@ -1025,6 +1100,80 @@ export function ProfileScreen({ navigation }: any) {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Saved addresses manager */}
+      <Modal visible={addrMgrVisible} transparent animationType="fade" onRequestClose={() => setAddrMgrVisible(false)}>
+        <View style={styles.addrMgrBackdrop}>
+          <View style={styles.addrMgrCard}>
+            <View style={styles.addrMgrHeader}>
+              <Text style={styles.addrMgrTitle}>Saved addresses</Text>
+              <TouchableOpacity style={styles.addrMgrClose} onPress={() => setAddrMgrVisible(false)}>
+                <X size={18} color="#0f172a" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+              {mgrLoading ? (
+                <ActivityIndicator color="#16a34a" style={{ marginVertical: 28 }} />
+              ) : mgrAddresses.length === 0 && !mgrPending ? (
+                <Text style={styles.addrMgrEmpty}>No addresses yet — add your first address.</Text>
+              ) : (
+                mgrAddresses.map(addr => (
+                  <View key={addr._id} style={styles.addrMgrRow}>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.addrMgrLabelRow}>
+                        <Text style={styles.addrMgrLabel}>{addr.label}</Text>
+                        {addr.isDefault ? (
+                          <View style={styles.addrMgrDefTag}><Text style={styles.addrMgrDefTagText}>Default</Text></View>
+                        ) : (
+                          <TouchableOpacity onPress={() => makeDefault(addr)}>
+                            <Text style={styles.addrMgrMakeDef}>Set as default</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                      <Text style={styles.addrMgrText} numberOfLines={2}>{addr.fullAddress}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.addrMgrDel} onPress={() => deleteAddress(addr)}>
+                      <Trash2 size={16} color="#dc2626" />
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+
+              {mgrPending && (
+                <View style={styles.addrMgrPendingCard}>
+                  <Text style={styles.addrMgrText} numberOfLines={2}>{mgrPending.fullAddress}</Text>
+                  <View style={styles.addrMgrChipRow}>
+                    {(['Home', 'Office', 'Friend', 'Other'] as AddressLabel[]).map(l => (
+                      <TouchableOpacity
+                        key={l}
+                        style={[styles.addrMgrChip, mgrLabel === l && styles.addrMgrChipOn]}
+                        onPress={() => setMgrLabel(l)}
+                      >
+                        <Text style={[styles.addrMgrChipText, mgrLabel === l && styles.addrMgrChipTextOn]}>{l}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity style={styles.addrMgrSaveBtn} disabled={mgrBusy} onPress={saveMgrPending}>
+                      {mgrBusy ? <ActivityIndicator color="white" size="small" /> : <Text style={styles.addrMgrSaveText}>Save address</Text>}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.addrMgrCancelBtn} onPress={() => setMgrPending(null)}>
+                      <Text style={styles.addrMgrCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            {!mgrPending && !mgrLoading && (
+              <TouchableOpacity style={styles.addrMgrAddBtn} onPress={() => setShowAddressSearch(true)} activeOpacity={0.8}>
+                <Text style={styles.addrMgrAddText}>+ Add new address</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       {/* Unified map-based address editor */}
       <AddressSearch
         visible={showAddressSearch}
@@ -1065,6 +1214,7 @@ const styles = StyleSheet.create({
   verifiedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'white' },
   userName: { fontSize: 22, fontWeight: '900', color: '#0f172a', marginBottom: 4, maxWidth: '85%', textAlign: 'center' },
   userPhone: { fontSize: 14, color: '#475569', fontWeight: '700', marginBottom: 2 },
+  addPhoneLink: { fontSize: 14, color: '#16a34a', fontWeight: '800', marginBottom: 2 },
   userEmail: { fontSize: 13, color: '#94a3b8', fontWeight: '500', marginBottom: 20 },
   
   statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, marginBottom: 20, gap: 12, borderWidth: 1, borderColor: '#f1f5f9' },
@@ -1162,4 +1312,32 @@ const styles = StyleSheet.create({
   successContainer: { alignItems: 'center', paddingVertical: 40 },
   successTitle: { fontSize: 24, fontWeight: '900', color: '#16a34a', marginTop: 16, marginBottom: 8 },
   successSub: { fontSize: 14, color: '#64748b', textAlign: 'center', paddingHorizontal: 20, fontWeight: '500' },
+
+  /* Saved addresses manager */
+  addrMgrBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  addrMgrCard: { backgroundColor: 'white', borderRadius: 24, padding: 20, width: '100%', maxWidth: 480 },
+  addrMgrHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  addrMgrTitle: { fontSize: 19, fontWeight: '900', color: '#0f172a' },
+  addrMgrClose: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center' },
+  addrMgrEmpty: { fontSize: 13.5, color: '#94a3b8', fontWeight: '500', textAlign: 'center', paddingVertical: 24 },
+  addrMgrRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  addrMgrLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
+  addrMgrLabel: { fontSize: 13.5, fontWeight: '800', color: '#0f172a' },
+  addrMgrDefTag: { backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 100 },
+  addrMgrDefTagText: { fontSize: 9.5, fontWeight: '800', color: '#15803d', letterSpacing: 0.4 },
+  addrMgrMakeDef: { fontSize: 11.5, fontWeight: '700', color: '#0284c7' },
+  addrMgrText: { fontSize: 12.5, color: '#64748b', fontWeight: '500', lineHeight: 18 },
+  addrMgrDel: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  addrMgrPendingCard: { backgroundColor: '#f8fafc', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#bbf7d0', marginTop: 12 },
+  addrMgrChipRow: { flexDirection: 'row', gap: 8, marginTop: 10, marginBottom: 14, flexWrap: 'wrap' },
+  addrMgrChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 100, borderWidth: 1.5, borderColor: '#e2e8f0', backgroundColor: 'white' },
+  addrMgrChipOn: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
+  addrMgrChipText: { fontSize: 12.5, fontWeight: '700', color: '#64748b' },
+  addrMgrChipTextOn: { color: '#15803d' },
+  addrMgrSaveBtn: { flex: 1, backgroundColor: '#15803d', paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  addrMgrSaveText: { color: 'white', fontSize: 14, fontWeight: '800' },
+  addrMgrCancelBtn: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' },
+  addrMgrCancelText: { color: '#64748b', fontSize: 14, fontWeight: '700' },
+  addrMgrAddBtn: { marginTop: 14, borderWidth: 1.5, borderColor: '#bbf7d0', borderStyle: 'dashed', backgroundColor: '#f0fdf4', paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
+  addrMgrAddText: { color: '#15803d', fontSize: 14, fontWeight: '800' },
 });

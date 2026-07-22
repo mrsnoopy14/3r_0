@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Image, Animated, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showAlert } from '../utils/alert';
 import { showRedeemInfoOnce } from '../utils/redeemInfo';
@@ -10,9 +10,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ChevronLeft, MapPin, CheckCircle2, PackageOpen, Plus, FileText, Magnet, Droplets, Wine, Smartphone } from 'lucide-react-native';
 import { KarmaCoin } from '../components/shared/KarmaCoin';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CupSoda, ShoppingBag, Archive, Newspaper as NewsIcon, BookOpen, Database, Cog, Utensils, Activity, Laptop, Cable, Tv, Battery, Shirt, Fan, AirVent, WashingMachine, Refrigerator, Flame } from 'lucide-react-native';
+import { CupSoda, ShoppingBag, Archive, Newspaper as NewsIcon, BookOpen, Database, Cog, Utensils, Activity, Laptop, Cable, Tv, Battery, Shirt, Fan, AirVent, WashingMachine, Refrigerator, Flame, Home as HomeIcon, Briefcase, Users } from 'lucide-react-native';
+import { addressService, SavedAddress, AddressLabel } from '../services/address';
 import { bookingService } from '../services/booking';
-import { profileService } from '../services/profile';
 import * as Location from 'expo-location';
 import { SCREEN_WIDTH as width } from '../utils/layout';
 
@@ -35,6 +35,8 @@ const CATEGORIES = [
   { id: '9', name: 'Plastic', color: '#3b82f6', icon: Droplets },
   { id: '10', name: 'Textile Waste', color: '#ec4899', icon: Shirt },
 ];
+
+const ADDRESS_LABEL_ICONS: Record<string, any> = { Home: HomeIcon, Office: Briefcase, Friend: Users, Other: MapPin };
 
 const CONDITIONS = ['Working', 'Not Working'] as const;
 type Condition = typeof CONDITIONS[number];
@@ -239,9 +241,17 @@ export function SchedulePickupScreen({ navigation }: any) {
   const [selectedTime, setSelectedTime] = useState('');
   const [instructions, setInstructions] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [userAddress, setUserAddress] = useState('');
-  const [userCoordinates, setUserCoordinates] = useState<[number, number] | null>(null);
-  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [userCoordinates, setUserCoordinates] = useState<[number, number] | null>(null); // GPS — map centering only
+
+  // Saved addresses (multi-address backend). Booking sends the SELECTED address,
+  // not the GPS position.
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  // Address picked on the map but not yet saved — waiting for a label choice.
+  const [pendingAddress, setPendingAddress] = useState<{ fullAddress: string; coords: [number, number] } | null>(null);
+  const [pendingLabel, setPendingLabel] = useState<AddressLabel>('Home');
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   // Priority 1: Get real GPS coordinates from device
   useEffect(() => {
@@ -259,24 +269,42 @@ export function SchedulePickupScreen({ navigation }: any) {
     })();
   }, []);
 
-  // Priority 2: Get address text + profile coordinates as fallback
+  // Load saved addresses; keep the current selection if it still exists,
+  // otherwise fall back to the default (or first) address.
   useFocusEffect(
     useCallback(() => {
-      profileService.getProfile().then(data => {
-        if (data && data.address) {
-          const addr = data.address;
-          const resolvedAddress = typeof addr === 'object' ? addr.fullAddress : addr;
-          if (resolvedAddress) setUserAddress(resolvedAddress);
-
-          // Use profile saved coordinates only if GPS not yet available
-          const profileCoords = addr?.location?.coordinates;
-          if (profileCoords && profileCoords.length === 2) {
-            setUserCoordinates(prev => prev ?? [profileCoords[0], profileCoords[1]]);
-          }
-        }
-      }).catch(err => console.log('Failed to fetch profile:', err));
+      addressService.list().then(list => {
+        setSavedAddresses(list);
+        setSelectedAddressId(prev => {
+          if (prev && list.some(a => a._id === prev)) return prev;
+          const def = list.find(a => a.isDefault) || list[0];
+          return def?._id ?? null;
+        });
+      }).catch(err => console.log('Failed to fetch addresses:', err));
     }, [])
   );
+
+  const handleSavePendingAddress = async () => {
+    if (!pendingAddress || isSavingAddress) return;
+    setIsSavingAddress(true);
+    try {
+      const list = await addressService.add({
+        label: pendingLabel,
+        fullAddress: pendingAddress.fullAddress,
+        longitude: pendingAddress.coords[0],
+        latitude: pendingAddress.coords[1],
+      });
+      setSavedAddresses(list);
+      // Select the address we just added (the API returns the whole array)
+      const added = [...list].reverse().find(a => a.fullAddress === pendingAddress.fullAddress) || list[list.length - 1];
+      if (added) setSelectedAddressId(added._id);
+      setPendingAddress(null);
+    } catch (error: any) {
+      showAlert('Could not save address', error?.response?.data?.message || 'Please try again.');
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
 
   // Cart Logic
   const updateQuantity = (itemId: string, delta: number) => {
@@ -312,7 +340,6 @@ export function SchedulePickupScreen({ navigation }: any) {
 
   const handleConfirmPickup = async () => {
     console.log('[Confirm Pickup] Pressed! Cart:', cart);
-    console.log('[Confirm Pickup] userAddress State:', userAddress);
 
     if (Object.keys(cart).length === 0) {
       showAlert("Empty cart", "Please add items to your cart first.");
@@ -324,20 +351,21 @@ export function SchedulePickupScreen({ navigation }: any) {
       return;
     }
 
-    if (!userCoordinates || typeof userCoordinates[0] !== 'number' || typeof userCoordinates[1] !== 'number' || Number.isNaN(userCoordinates[0]) || Number.isNaN(userCoordinates[1])) {
-      showAlert("Location required", "Please allow location access so we can find an agent near you.", [{ text: "OK" }]);
+    const selectedAddress = savedAddresses.find(a => a._id === selectedAddressId);
+    if (!selectedAddress) {
+      showAlert("Pickup address required", "Please add or select a pickup address below.");
       return;
     }
 
-    if (!userAddress || userAddress.trim().length === 0) {
-      showAlert(
-        "Pickup address required",
-        "Please save your home or office address in the Profile section before scheduling a pickup.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Go to Profile", onPress: () => navigation.navigate('Profile') }
-        ]
-      );
+    // Booking uses the SELECTED address's coordinates; device GPS is only a
+    // fallback for older saved addresses missing a location.
+    const addrCoords = selectedAddress.location?.coordinates;
+    const coords: [number, number] | null =
+      addrCoords && addrCoords.length === 2 && addrCoords.every(n => typeof n === 'number' && !Number.isNaN(n))
+        ? [addrCoords[0], addrCoords[1]]
+        : userCoordinates;
+    if (!coords) {
+      showAlert("Location required", "This address has no location pin. Please re-add it, or allow location access.", [{ text: "OK" }]);
       return;
     }
 
@@ -362,10 +390,10 @@ export function SchedulePickupScreen({ navigation }: any) {
         pickupDate: selectedDate,
         timeSlot: selectedTime,
         address: {
-          fullAddress: userAddress,
+          fullAddress: selectedAddress.fullAddress,
           location: {
             type: 'Point' as const,
-            coordinates: userCoordinates as [number, number]
+            coordinates: coords
           }
         },
       };
@@ -550,40 +578,84 @@ export function SchedulePickupScreen({ navigation }: any) {
         })}
       </ScrollView>
 
-      {/* Address */}
+      {/* Address — saved-address picker (Flipkart style) */}
       <View style={styles.sectionHeader}>
         <View style={styles.sectionNum}><Text style={styles.sectionNumText}>4</Text></View>
-        <Text style={styles.sectionTitle}>Confirm address</Text>
+        <Text style={styles.sectionTitle}>Select address</Text>
       </View>
-      <View style={styles.addressCard}>
-        <View style={styles.addressIconBg}>
-          <MapPin size={20} color="#16a34a" />
-        </View>
-        <View style={styles.addressBody}>
-          <View style={styles.addressTopRow}>
-            <Text style={styles.homeLabelText}>Pickup address</Text>
-            <TouchableOpacity onPress={() => setIsEditingAddress(true)} activeOpacity={0.7}>
-              <Text style={styles.changeText}>Edit</Text>
+
+      {savedAddresses.map(addr => {
+        const on = addr._id === selectedAddressId;
+        const LabelIcon = ADDRESS_LABEL_ICONS[addr.label] || MapPin;
+        return (
+          <TouchableOpacity
+            key={addr._id}
+            style={[styles.addrRow, on && styles.addrRowOn]}
+            onPress={() => setSelectedAddressId(addr._id)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.addrRadio, on && styles.addrRadioOn]}>
+              {on && <View style={styles.addrRadioDot} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.addrLabelRow}>
+                <LabelIcon size={13} color={on ? '#15803d' : '#64748b'} />
+                <Text style={[styles.addrLabel, on && { color: '#15803d' }]}>{addr.label}</Text>
+                {addr.isDefault && (
+                  <View style={styles.addrDefaultTag}><Text style={styles.addrDefaultTagText}>Default</Text></View>
+                )}
+              </View>
+              <Text style={styles.addrText} numberOfLines={2}>{addr.fullAddress}</Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+
+      {savedAddresses.length === 0 && !pendingAddress && (
+        <Text style={styles.addrEmpty}>No saved addresses yet — add your first one below.</Text>
+      )}
+
+      {pendingAddress ? (
+        <View style={styles.addrSaveCard}>
+          <Text style={styles.addrSaveTitle} numberOfLines={2}>{pendingAddress.fullAddress}</Text>
+          <Text style={styles.addrSaveAs}>Save as</Text>
+          <View style={styles.addrChipRow}>
+            {(['Home', 'Office', 'Friend', 'Other'] as AddressLabel[]).map(l => (
+              <TouchableOpacity
+                key={l}
+                style={[styles.addrChip, pendingLabel === l && styles.addrChipOn]}
+                onPress={() => setPendingLabel(l)}
+              >
+                <Text style={[styles.addrChipText, pendingLabel === l && styles.addrChipTextOn]}>{l}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={styles.addrSaveBtn} disabled={isSavingAddress} onPress={handleSavePendingAddress} activeOpacity={0.8}>
+              {isSavingAddress ? <ActivityIndicator color="white" size="small" /> : <Text style={styles.addrSaveBtnText}>Save address</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addrCancelBtn} onPress={() => setPendingAddress(null)} activeOpacity={0.8}>
+              <Text style={styles.addrCancelBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.addressValue}>
-            {userAddress || 'No address saved. Tap Edit to add one.'}
-          </Text>
-          <AddressSearch
-            visible={isEditingAddress}
-            userCoords={userCoordinates}
-            onSelect={(address, coords) => {
-              setUserAddress(address);
-              setUserCoordinates(coords);
-              setIsEditingAddress(false);
-              // Persist to the profile too, so it shows up under Saved Addresses —
-              // best-effort: booking itself doesn't depend on this succeeding.
-              profileService.updateAddress({ fullAddress: address, longitude: coords[0], latitude: coords[1] }).catch(() => {});
-            }}
-            onCancel={() => setIsEditingAddress(false)}
-          />
         </View>
-      </View>
+      ) : (
+        <TouchableOpacity style={styles.addrAddBtn} onPress={() => setIsAddingAddress(true)} activeOpacity={0.8}>
+          <Plus size={16} color="#15803d" />
+          <Text style={styles.addrAddText}>Add new address</Text>
+        </TouchableOpacity>
+      )}
+
+      <AddressSearch
+        visible={isAddingAddress}
+        userCoords={userCoordinates}
+        onSelect={(address, coords) => {
+          setIsAddingAddress(false);
+          setPendingAddress({ fullAddress: address, coords });
+          setPendingLabel('Home');
+        }}
+        onCancel={() => setIsAddingAddress(false)}
+      />
 
       {/* Estimates Box based on Cart */}
       <View style={styles.estimatesBox}>
@@ -732,13 +804,32 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 13, color: '#64748b', fontWeight: '700' },
   timeTextSelected: { color: '#16a34a', fontWeight: '800' },
 
-  addressCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: 'white', padding: 16, borderRadius: 16, elevation: 1, marginBottom: 24 },
-  addressIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f0fdf4', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  addressBody: { flex: 1, marginLeft: 12 },
-  addressTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  homeLabelText: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
-  addressValue: { fontSize: 13, color: '#64748b', fontWeight: '500', lineHeight: 20 },
-  changeText: { color: '#16a34a', fontSize: 13, fontWeight: '700' },
+  // Saved-address picker
+  addrRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: 'white', padding: 14, borderRadius: 16, borderWidth: 1.5, borderColor: '#f1f5f9', marginBottom: 10 },
+  addrRowOn: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
+  addrRadio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  addrRadioOn: { borderColor: '#16a34a' },
+  addrRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#16a34a' },
+  addrLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
+  addrLabel: { fontSize: 13, fontWeight: '800', color: '#334155' },
+  addrDefaultTag: { backgroundColor: '#dcfce7', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 100, marginLeft: 4 },
+  addrDefaultTagText: { fontSize: 9, fontWeight: '800', color: '#15803d', letterSpacing: 0.4 },
+  addrText: { fontSize: 12.5, color: '#64748b', fontWeight: '500', lineHeight: 18 },
+  addrEmpty: { fontSize: 13, color: '#94a3b8', fontWeight: '500', marginBottom: 10, marginLeft: 4 },
+  addrAddBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#bbf7d0', borderStyle: 'dashed', backgroundColor: '#f0fdf4', paddingVertical: 12, borderRadius: 16, marginBottom: 24 },
+  addrAddText: { color: '#15803d', fontSize: 14, fontWeight: '800' },
+  addrSaveCard: { backgroundColor: 'white', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#bbf7d0', marginBottom: 24 },
+  addrSaveTitle: { fontSize: 13, color: '#334155', fontWeight: '600', lineHeight: 19, marginBottom: 10 },
+  addrSaveAs: { fontSize: 11, color: '#94a3b8', fontWeight: '800', letterSpacing: 0.6, marginBottom: 8, textTransform: 'uppercase' },
+  addrChipRow: { flexDirection: 'row', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
+  addrChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 100, borderWidth: 1.5, borderColor: '#e2e8f0', backgroundColor: 'white' },
+  addrChipOn: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
+  addrChipText: { fontSize: 12.5, fontWeight: '700', color: '#64748b' },
+  addrChipTextOn: { color: '#15803d' },
+  addrSaveBtn: { flex: 1, backgroundColor: '#15803d', paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  addrSaveBtnText: { color: 'white', fontSize: 14, fontWeight: '800' },
+  addrCancelBtn: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' },
+  addrCancelBtnText: { color: '#64748b', fontSize: 14, fontWeight: '700' },
 
   estimatesBox: { backgroundColor: '#fffbeb', borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#fde68a' },
   estimateLabel: { fontSize: 12, color: '#b45309', fontWeight: '700', marginBottom: 8 },

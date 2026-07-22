@@ -52,10 +52,11 @@ export const authService = {
     }
   },
 
-  // Check if User exists
-  checkUser: async (email: string) => {
+  // Check if User exists — accepts an email OR a mobile number. Both keys are
+  // sent so either backend field shape matches.
+  checkUser: async (identifier: string) => {
     try {
-      const response = await api.post('/api/v1/auth/check-user', { email });
+      const response = await api.post('/api/v1/auth/check-user', { email: identifier, identifier });
       return response.data;
     } catch (error: any) {
       console.error('Check User Error:', error?.response?.data || error);
