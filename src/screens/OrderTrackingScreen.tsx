@@ -30,6 +30,7 @@ const BASE_STEPS = [
   { key: 'ORDER_PLACED',   label: 'Order placed',       sublabel: 'Your pickup request is confirmed' },
   { key: 'AGENT_ASSIGNED', label: 'Agent assigned',     sublabel: 'Agent accepted and is on the way' },
   { key: 'AGENT_REACHED',  label: 'Agent reached',      sublabel: 'Agent has reached your location' },
+  { key: 'VERIFICATION',   label: 'Verification', sublabel: 'Waste weighed, KarmaCoins credited' },
   { key: 'COMPLETED',      label: 'Completed',           sublabel: 'Reached warehouse and completed' },
 ];
 
