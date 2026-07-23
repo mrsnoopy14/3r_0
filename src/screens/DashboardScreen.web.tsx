@@ -231,7 +231,7 @@ export function DashboardScreen({ navigation }: any) {
                 <ArrowRight size={20} color="rgba(255,255,255,0.4)" />
               </View>
               <Text style={z.actionCardTitle}>Schedule a pickup</Text>
-              <Text style={z.actionCardSub}>Free doorstep collection for 8 waste types. Our verified agent comes to you.</Text>
+              <Text style={z.actionCardSub}>Turn your clutter into KarmaCoins. Doorstep pickup, zero effort, planet-friendly.</Text>
               <View style={z.actionCardCTA}>
                 <Text style={z.actionCardCTAText}>Schedule now</Text>
                 <ArrowRight size={14} color="#4ade80" />
