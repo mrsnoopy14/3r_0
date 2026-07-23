@@ -2,14 +2,32 @@ import api from './api';
 
 // Multiple saved addresses (Flipkart-style). One address is always the default —
 // the backend promotes the first saved address, and re-points the flag on delete.
-export type AddressLabel = 'Home' | 'Office' | 'Friend' | 'Other';
+export type AddressLabel = 'Home' | 'Work' | 'Other';
 
 export interface SavedAddress {
   _id: string;
   label: AddressLabel;
   fullAddress: string;
+  houseNo: string;
+  apartment?: string;
+  landmark?: string;
+  receiverName: string;
+  receiverPhone: string;
   location: { type: 'Point'; coordinates: [number, number] }; // [lng, lat]
   isDefault: boolean;
+}
+
+export interface AddressInput {
+  label: AddressLabel;
+  fullAddress: string;
+  houseNo: string;
+  apartment?: string;
+  landmark?: string;
+  receiverName: string;
+  receiverPhone: string;
+  longitude: number;
+  latitude: number;
+  isDefault?: boolean;
 }
 
 const unwrap = (response: any): SavedAddress[] =>
@@ -26,13 +44,7 @@ export const addressService = {
     }
   },
 
-  add: async (data: {
-    label: AddressLabel;
-    fullAddress: string;
-    longitude: number;
-    latitude: number;
-    isDefault?: boolean;
-  }): Promise<SavedAddress[]> => {
+  add: async (data: AddressInput): Promise<SavedAddress[]> => {
     try {
       const response = await api.post('/api/v1/users/addresses', data);
       return unwrap(response);
@@ -44,7 +56,7 @@ export const addressService = {
 
   update: async (
     addressId: string,
-    data: Partial<{ label: AddressLabel; fullAddress: string; longitude: number; latitude: number; isDefault: boolean }>
+    data: Partial<AddressInput>
   ): Promise<SavedAddress[]> => {
     try {
       const response = await api.patch(`/api/v1/users/addresses/${addressId}`, data);

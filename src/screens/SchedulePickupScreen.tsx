@@ -10,7 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ChevronLeft, MapPin, CheckCircle2, PackageOpen, Plus, FileText, Magnet, Droplets, Wine, Smartphone } from 'lucide-react-native';
 import { KarmaCoin } from '../components/shared/KarmaCoin';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CupSoda, ShoppingBag, Archive, Newspaper as NewsIcon, BookOpen, Database, Cog, Utensils, Activity, Laptop, Cable, Tv, Battery, Shirt, Fan, AirVent, WashingMachine, Refrigerator, Flame, Home as HomeIcon, Briefcase, Users } from 'lucide-react-native';
+import { CupSoda, ShoppingBag, Archive, Newspaper as NewsIcon, BookOpen, Database, Cog, Utensils, Activity, Laptop, Cable, Tv, Battery, Shirt, Fan, AirVent, WashingMachine, Refrigerator, Flame, Home as HomeIcon, Briefcase } from 'lucide-react-native';
 import { addressService, SavedAddress, AddressLabel } from '../services/address';
 import { bookingService } from '../services/booking';
 import * as Location from 'expo-location';
@@ -38,7 +38,8 @@ const CATEGORIES = [
   { id: '10', name: 'Textile Waste', backendName: 'Textile Waste', color: '#ec4899', icon: Shirt },
 ];
 
-const ADDRESS_LABEL_ICONS: Record<string, any> = { Home: HomeIcon, Office: Briefcase, Friend: Users, Other: MapPin };
+const ADDRESS_LABEL_ICONS: Record<string, any> = { Home: HomeIcon, Work: Briefcase, Other: MapPin };
+const ADDRESS_LABELS: AddressLabel[] = ['Home', 'Work', 'Other'];
 
 const CONDITIONS = ['Working', 'Not Working'] as const;
 type Condition = typeof CONDITIONS[number];
@@ -253,6 +254,12 @@ export function SchedulePickupScreen({ navigation }: any) {
   // Address picked on the map but not yet saved — waiting for a label choice.
   const [pendingAddress, setPendingAddress] = useState<{ fullAddress: string; coords: [number, number] } | null>(null);
   const [pendingLabel, setPendingLabel] = useState<AddressLabel>('Home');
+  // "Add address details" form (backend-required fields)
+  const [pendingHouseNo, setPendingHouseNo] = useState('');
+  const [pendingApartment, setPendingApartment] = useState('');
+  const [pendingLandmark, setPendingLandmark] = useState('');
+  const [pendingReceiverName, setPendingReceiverName] = useState('');
+  const [pendingReceiverPhone, setPendingReceiverPhone] = useState('');
   const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   // Priority 1: Get real GPS coordinates from device
@@ -286,13 +293,39 @@ export function SchedulePickupScreen({ navigation }: any) {
     }, [])
   );
 
+  const resetPendingForm = () => {
+    setPendingAddress(null);
+    setPendingHouseNo('');
+    setPendingApartment('');
+    setPendingLandmark('');
+    setPendingReceiverName('');
+    setPendingReceiverPhone('');
+  };
+
   const handleSavePendingAddress = async () => {
     if (!pendingAddress || isSavingAddress) return;
+    if (!pendingHouseNo.trim()) {
+      showAlert('Missing details', 'Please enter your house / flat / block number.');
+      return;
+    }
+    if (!pendingReceiverName.trim()) {
+      showAlert('Missing details', "Please enter the receiver's name.");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(pendingReceiverPhone.trim())) {
+      showAlert('Invalid phone', "Please enter a valid 10-digit mobile number for the receiver.");
+      return;
+    }
     setIsSavingAddress(true);
     try {
       const list = await addressService.add({
         label: pendingLabel,
         fullAddress: pendingAddress.fullAddress,
+        houseNo: pendingHouseNo.trim(),
+        apartment: pendingApartment.trim() || undefined,
+        landmark: pendingLandmark.trim() || undefined,
+        receiverName: pendingReceiverName.trim(),
+        receiverPhone: pendingReceiverPhone.trim(),
         longitude: pendingAddress.coords[0],
         latitude: pendingAddress.coords[1],
       });
@@ -300,7 +333,7 @@ export function SchedulePickupScreen({ navigation }: any) {
       // Select the address we just added (the API returns the whole array)
       const added = [...list].reverse().find(a => a.fullAddress === pendingAddress.fullAddress) || list[list.length - 1];
       if (added) setSelectedAddressId(added._id);
-      setPendingAddress(null);
+      resetPendingForm();
     } catch (error: any) {
       showAlert('Could not save address', error?.response?.data?.message || 'Please try again.');
     } finally {
@@ -391,8 +424,14 @@ export function SchedulePickupScreen({ navigation }: any) {
         categories: payloadCategories,
         pickupDate: selectedDate,
         timeSlot: selectedTime,
+        // Booking takes the full ad-hoc address object (not addressId)
         address: {
           fullAddress: selectedAddress.fullAddress,
+          houseNo: selectedAddress.houseNo,
+          apartment: selectedAddress.apartment,
+          landmark: selectedAddress.landmark,
+          receiverName: selectedAddress.receiverName,
+          receiverPhone: selectedAddress.receiverPhone,
           location: {
             type: 'Point' as const,
             coordinates: coords
@@ -607,7 +646,12 @@ export function SchedulePickupScreen({ navigation }: any) {
                   <View style={styles.addrDefaultTag}><Text style={styles.addrDefaultTagText}>Default</Text></View>
                 )}
               </View>
-              <Text style={styles.addrText} numberOfLines={2}>{addr.fullAddress}</Text>
+              <Text style={styles.addrText} numberOfLines={2}>
+                {[addr.houseNo, addr.apartment, addr.fullAddress].filter(Boolean).join(', ')}
+              </Text>
+              {!!addr.receiverName && (
+                <Text style={styles.addrReceiver}>{addr.receiverName} · {addr.receiverPhone}</Text>
+              )}
             </View>
           </TouchableOpacity>
         );
@@ -620,9 +664,50 @@ export function SchedulePickupScreen({ navigation }: any) {
       {pendingAddress ? (
         <View style={styles.addrSaveCard}>
           <Text style={styles.addrSaveTitle} numberOfLines={2}>{pendingAddress.fullAddress}</Text>
-          <Text style={styles.addrSaveAs}>Save as</Text>
+
+          <TextInput
+            style={styles.addrInput}
+            placeholder="House / flat / block no. *"
+            placeholderTextColor="#9ca3af"
+            value={pendingHouseNo}
+            onChangeText={setPendingHouseNo}
+          />
+          <TextInput
+            style={styles.addrInput}
+            placeholder="Apartment / building / society (optional)"
+            placeholderTextColor="#9ca3af"
+            value={pendingApartment}
+            onChangeText={setPendingApartment}
+          />
+          <TextInput
+            style={styles.addrInput}
+            placeholder="Landmark (optional)"
+            placeholderTextColor="#9ca3af"
+            value={pendingLandmark}
+            onChangeText={setPendingLandmark}
+          />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TextInput
+              style={[styles.addrInput, { flex: 1 }]}
+              placeholder="Receiver's name *"
+              placeholderTextColor="#9ca3af"
+              value={pendingReceiverName}
+              onChangeText={setPendingReceiverName}
+            />
+            <TextInput
+              style={[styles.addrInput, { flex: 1 }]}
+              placeholder="Receiver's phone *"
+              placeholderTextColor="#9ca3af"
+              keyboardType="number-pad"
+              maxLength={10}
+              value={pendingReceiverPhone}
+              onChangeText={(t) => setPendingReceiverPhone(t.replace(/\D/g, '').slice(0, 10))}
+            />
+          </View>
+
+          <Text style={styles.addrSaveAs}>Save address as</Text>
           <View style={styles.addrChipRow}>
-            {(['Home', 'Office', 'Friend', 'Other'] as AddressLabel[]).map(l => (
+            {ADDRESS_LABELS.map(l => (
               <TouchableOpacity
                 key={l}
                 style={[styles.addrChip, pendingLabel === l && styles.addrChipOn]}
@@ -636,7 +721,7 @@ export function SchedulePickupScreen({ navigation }: any) {
             <TouchableOpacity style={styles.addrSaveBtn} disabled={isSavingAddress} onPress={handleSavePendingAddress} activeOpacity={0.8}>
               {isSavingAddress ? <ActivityIndicator color="white" size="small" /> : <Text style={styles.addrSaveBtnText}>Save address</Text>}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addrCancelBtn} onPress={() => setPendingAddress(null)} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.addrCancelBtn} onPress={resetPendingForm} activeOpacity={0.8}>
               <Text style={styles.addrCancelBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -655,6 +740,9 @@ export function SchedulePickupScreen({ navigation }: any) {
           setIsAddingAddress(false);
           setPendingAddress({ fullAddress: address, coords });
           setPendingLabel('Home');
+          setPendingHouseNo('');
+          setPendingApartment('');
+          setPendingLandmark('');
         }}
         onCancel={() => setIsAddingAddress(false)}
       />
@@ -817,6 +905,8 @@ const styles = StyleSheet.create({
   addrDefaultTag: { backgroundColor: '#dcfce7', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 100, marginLeft: 4 },
   addrDefaultTagText: { fontSize: 9, fontWeight: '800', color: '#15803d', letterSpacing: 0.4 },
   addrText: { fontSize: 12.5, color: '#64748b', fontWeight: '500', lineHeight: 18 },
+  addrReceiver: { fontSize: 11.5, color: '#94a3b8', fontWeight: '600', marginTop: 3 },
+  addrInput: { backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 12, paddingVertical: 10, fontSize: 13.5, color: '#0f172a', marginBottom: 10 },
   addrEmpty: { fontSize: 13, color: '#94a3b8', fontWeight: '500', marginBottom: 10, marginLeft: 4 },
   addrAddBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#bbf7d0', borderStyle: 'dashed', backgroundColor: '#f0fdf4', paddingVertical: 12, borderRadius: 16, marginBottom: 24 },
   addrAddText: { color: '#15803d', fontSize: 14, fontWeight: '800' },
