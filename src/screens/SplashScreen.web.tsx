@@ -296,7 +296,7 @@ export function SplashScreen({ navigation, route }: any) {
               sustainable action generates value.
             </Text>
 
-            <View style={[s.featGrid, { marginTop: 36 }, isMobile && { flexDirection: 'column' }]}>
+            <View style={[s.featGrid, { marginTop: 36 }]}>
               {[
                 { icon: Users, color: '#16a34a', label: 'Citizens' },
                 { icon: HomeIcon, color: '#0891b2', label: 'Housing societies' },
@@ -307,7 +307,7 @@ export function SplashScreen({ navigation, route }: any) {
                 { icon: Truck, color: '#7c3aed', label: 'Pickup partners' },
                 { icon: Store, color: '#ea580c', label: 'Sustainable brands' },
               ].map((eco, i) => (
-                <Card key={i} delay={i * 50} style={[s.ecoCard, { width: isMobile ? '47%' : '22%' }]}>
+                <Card key={i} delay={i * 50} style={[s.ecoCard, { width: isMobile ? '47%' : '22%', flexGrow: 1 }]}>
                   <View style={[s.featIconBg, { backgroundColor: eco.color + '15' }]}>
                     <eco.icon size={20} color={eco.color} />
                   </View>
