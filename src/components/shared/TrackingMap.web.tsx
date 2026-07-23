@@ -10,12 +10,17 @@ interface TrackingMapProps {
 
 const mapplsObj = new mappls();
 
-// Custom HTML pins so the pickup point and the moving agent are visually
-// distinct (default Mappls markers are identical red pins).
-const USER_PIN_HTML =
-  '<div style="width:38px;height:38px;border-radius:50%;background:#dcfce7;border:3px solid #16a34a;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(22,163,74,0.45);">📦</div>';
-const AGENT_PIN_HTML =
-  '<div style="width:38px;height:38px;border-radius:50%;background:#e0f2fe;border:3px solid #0284c7;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(2,132,199,0.5);">🛵</div>';
+// Blinkit-style pins: circular badge on a pointed stem, ground shadow below.
+// Pickup = solid green with house; agent = white badge with scooter.
+const pinHtml = (bg: string, border: string, emoji: string) =>
+  '<div style="display:flex;flex-direction:column;align-items:center;width:48px;">' +
+    `<div style="width:42px;height:42px;border-radius:50%;background:${bg};border:3px solid ${border};box-shadow:0 4px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:20px;">${emoji}</div>` +
+    `<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:11px solid ${border};margin-top:-3px;"></div>` +
+    '<div style="width:14px;height:4px;border-radius:50%;background:rgba(0,0,0,0.25);margin-top:1px;"></div>' +
+  '</div>';
+
+const USER_PIN_HTML = pinHtml('#16a34a', '#ffffff', '🏠');
+const AGENT_PIN_HTML = pinHtml('#ffffff', '#0284c7', '🛵');
 
 // OpenStreetMap iframe — used only if the Mappls Web SDK fails to load,
 // so the tracking view is never worse than before.
@@ -59,10 +64,10 @@ export function TrackingMap({ userCoordinate, agentLocation }: TrackingMapProps)
             userMarkerRef.current = mapplsObj.Marker({
               map,
               position: { lat: userCoordinate[1], lng: userCoordinate[0] },
-              popupHtml: '<b>Pickup location</b>',
               html: USER_PIN_HTML,
-              width: 38,
-              height: 38,
+              width: 48,
+              height: 62,
+              offset: [0, -28],
             });
           });
         } catch (e) {
@@ -94,10 +99,10 @@ export function TrackingMap({ userCoordinate, agentLocation }: TrackingMapProps)
         agentMarkerRef.current = mapplsObj.Marker({
           map: mapRef.current,
           position: pos,
-          popupHtml: '<b>Agent (live)</b>',
           html: AGENT_PIN_HTML,
-          width: 38,
-          height: 38,
+          width: 48,
+          height: 62,
+          offset: [0, -28],
         });
       }
       mapRef.current.setCenter([agentLocation.lng, agentLocation.lat]);
