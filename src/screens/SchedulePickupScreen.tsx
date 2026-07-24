@@ -128,10 +128,10 @@ const ALL_ITEMS: CatalogueItem[] = [
   // 10. Textile Waste (kg) — per-item rates pending exact confirmation from backend
   { id: 'tx1', catId: '10', subCategory: 'Grade 1 Clothing', unit: 'kg', coins: 500, itemIcon: Shirt, image: require('../../assets/catalogue/grade-1-clothing.jpg') },
   { id: 'tx2', catId: '10', subCategory: 'Grade 2 Clothing', unit: 'kg', coins: 200, itemIcon: Shirt, image: require('../../assets/catalogue/grade-2-clothing.jpg') },
-  { id: 'tx3', catId: '10', subCategory: 'Jeans', unit: 'kg', coins: 300, itemIcon: Shirt },
+  { id: 'tx3', catId: '10', subCategory: 'Jeans', unit: 'kg', coins: 300, itemIcon: Shirt, image: require('../../assets/catalogue/jeans.jpg') },
   { id: 'tx4', catId: '10', subCategory: 'Premium Sarees', unit: 'kg', coins: 500, itemIcon: Shirt, image: require('../../assets/catalogue/premium-sarees.jpg') },
   { id: 'tx5', catId: '10', subCategory: 'Non-Premium Sarees', unit: 'kg', coins: 200, itemIcon: Shirt, image: require('../../assets/catalogue/non-premium-sarees.jpg') },
-  { id: 'tx6', catId: '10', subCategory: 'Cartons', unit: 'kg', coins: 50, itemIcon: PackageOpen },
+  { id: 'tx6', catId: '10', subCategory: 'Cartons', unit: 'kg', coins: 50, itemIcon: PackageOpen, image: require('../../assets/catalogue/cartons.jpg') },
   { id: 'tx7', catId: '10', subCategory: 'Other Textiles', unit: 'kg', coins: 50, itemIcon: Shirt, image: require('../../assets/catalogue/other-textiles.jpg') },
 ];
 
