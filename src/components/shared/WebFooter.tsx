@@ -93,27 +93,17 @@ export function WebFooter() {
           {/* Download App */}
           <View style={[s.col, isMobile && { flex: undefined }]}>
             <Text style={s.colTitle}>Get the app</Text>
-            <View style={isMobile ? { flexDirection: 'row', gap: 10 } : {}}>
-              <TouchableOpacity style={[s.storeBtn, s.storeBtnDisabled, isMobile && { flex: 1 }]} activeOpacity={1}>
-                <Text style={s.storeBtnIcon}>▶</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.storeBtnSub}>GET IT ON</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={s.storeBtnText}>Google Play</Text>
-                    <Text style={s.comingSoonInline}>Coming soon</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.storeBtn, s.storeBtnDisabled, isMobile && { flex: 1 }]} activeOpacity={1}>
-                <Text style={s.storeBtnIcon}>●</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.storeBtnSub}>DOWNLOAD ON</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={s.storeBtnText}>App Store</Text>
-                    <Text style={s.comingSoonInline}>Coming soon</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+              <View style={[s.storeBtn, s.storeBtnDisabled, { flexGrow: 1 }]}>
+                <Text style={s.storeBtnSub}>GET IT ON</Text>
+                <Text style={s.storeBtnText}>Google Play</Text>
+                <Text style={s.comingSoonInline}>Coming soon</Text>
+              </View>
+              <View style={[s.storeBtn, s.storeBtnDisabled, { flexGrow: 1 }]}>
+                <Text style={s.storeBtnSub}>DOWNLOAD ON</Text>
+                <Text style={s.storeBtnText}>App Store</Text>
+                <Text style={s.comingSoonInline}>Coming soon</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -123,17 +113,15 @@ export function WebFooter() {
       <View style={s.bottomBar}>
         <View style={[s.container, { paddingHorizontal: pad }, isMobile ? s.bottomContentMobile : s.bottomContent]}>
           <Text style={s.copyright}>© 2026 KarmaVer$e by 3R Zero Waste. All rights reserved.</Text>
-          {!isMobile && (
-            <View style={s.legalLinks}>
-              <TouchableOpacity onPress={() => navigation.navigate('Legal', { type: 'privacy' })}>
-                <Text style={s.legalLink}>Privacy policy</Text>
-              </TouchableOpacity>
-              <Text style={s.legalDot}>·</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Legal', { type: 'terms' })}>
-                <Text style={s.legalLink}>Terms of service</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={s.legalLinks}>
+            <TouchableOpacity onPress={() => navigation.navigate('Legal', { type: 'privacy' })}>
+              <Text style={s.legalLink}>Privacy policy</Text>
+            </TouchableOpacity>
+            <Text style={s.legalDot}>·</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Legal', { type: 'terms' })}>
+              <Text style={s.legalLink}>Terms of service</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -157,16 +145,15 @@ const s = StyleSheet.create({
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   contactText: { color: '#94a3b8', fontSize: 13, fontWeight: '500', flex: 1 },
 
-  storeBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10, borderWidth: 1, borderColor: '#334155' },
+  storeBtn: { minWidth: 130, backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 10, borderWidth: 1, borderColor: '#334155' },
   storeBtnDisabled: { opacity: 0.5 },
-  storeBtnIcon: { color: 'white', fontSize: 16 },
-  storeBtnSub: { color: '#94a3b8', fontSize: 8, fontWeight: '700', letterSpacing: 1 },
-  storeBtnText: { color: 'white', fontSize: 13, fontWeight: '700' },
-  comingSoonInline: { color: '#4ade80', fontSize: 10, fontWeight: '700', opacity: 0.85 },
+  storeBtnSub: { color: '#94a3b8', fontSize: 9, fontWeight: '700', letterSpacing: 1 },
+  storeBtnText: { color: 'white', fontSize: 14, fontWeight: '700', marginTop: 1 },
+  comingSoonInline: { color: '#4ade80', fontSize: 10, fontWeight: '700', opacity: 0.85, marginTop: 2 },
 
   bottomBar: { borderTopWidth: 1, borderTopColor: '#1e293b' },
   bottomContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18 },
-  bottomContentMobile: { flexDirection: 'column', alignItems: 'center', paddingVertical: 16, gap: 4 },
+  bottomContentMobile: { flexDirection: 'column', alignItems: 'center', paddingVertical: 16, gap: 10 },
   copyright: { color: '#64748b', fontSize: 12, fontWeight: '500', textAlign: 'center' },
   legalLinks: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legalLink: { color: '#64748b', fontSize: 12, fontWeight: '500' },
